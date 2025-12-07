@@ -6,21 +6,21 @@ export const mockAccounts: Account[] = [
     email: "patient@test.com",
     password: "test123",
     name: "Jan Kowalski",
-    subtitle: "Panel Pacjenta",
+    subtitle: "Patient Dashboard",
   },
   {
     role: "doctor",
     email: "doctor@test.com",
     password: "test123",
     name: "Dr Anna Nowak",
-    subtitle: "Panel Lekarza",
+    subtitle: "Doctor Dashboard",
   },
   {
     role: "admin",
     email: "admin@test.com",
     password: "test123",
     name: "Ewa Gajda",
-    subtitle: "Panel Administratora",
+    subtitle: "Admin Dashboard",
   },
 ];
 

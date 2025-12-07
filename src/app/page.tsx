@@ -3,7 +3,7 @@
 import LoginScreen from "@/components/auth/LoginScreen";
 import AdminDashboard from "@/components/dashboards/AdminDashboard";
 import DoctorDashboard from "@/components/dashboards/DoctorDashboard";
-import PatientDashboard from "@/components/dashboards/PatientDashboard";
+import PatientDashboard from "@/components/dashboards/patient/PatientDashboard";
 import { mockAccounts } from "@/data/mock-accounts";
 import type { Account } from "@/types/account";
 import { useMemo, useState, type FormEvent } from "react";
