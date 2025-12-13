@@ -1,0 +1,190 @@
+import { Doctor } from "@/types/Doctor";
+import { useState } from "react";
+
+export function UpdateDoctor({
+  onBack,
+  onCancel,
+  doctor,
+}: {
+  onBack: () => void;
+  onCancel: () => void;
+  doctor: Doctor;
+}) {
+  const [firstName, setFirstName] = useState(doctor?.firstName ?? "");
+  const [lastName, setLastName] = useState(doctor?.lastName ?? "");
+  const [email, setEmail] = useState(doctor?.email ?? "");
+  const [specialization, setSpecialization] = useState(
+    doctor?.specialization ?? ""
+  );
+  const [workStartDate, setWorkStartDate] = useState(
+    doctor?.workStartDate ?? ""
+  );
+  console.log(workStartDate);
+  const [phone, setPhone] = useState(doctor?.phone ?? "");
+  const [password, setPassword] = useState(doctor?.password ?? "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const updatedDoctor: Doctor = {
+      id: doctor!.id,
+      firstName,
+      lastName,
+      email,
+      specialization,
+      workStartDate: workStartDate.toString(),
+      phone,
+      password,
+    };
+    alert("Zmieniono dane lekarza!");
+    onBack();
+  };
+
+  return (
+    <section className="w-full space-y-6">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
+        <h2 className="mb-6 text-lg font-semibold text-slate-900">
+          Zmien dane lekarza
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="firstName"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Imię <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="lastName"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Nazwisko <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                required
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+            />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="specialization"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Specjalizacja <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="specialization"
+                type="text"
+                required
+                value={specialization}
+                onChange={(e) => setSpecialization(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="workStartDate"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Doświadczenie
+              </label>
+              <input
+                id="workStartDate"
+                type="date"
+                value={workStartDate}
+                onChange={(e) => setWorkStartDate(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="phone"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Telefon <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="phone"
+              required
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-slate-700"
+            >
+              Hasło tymczasowe <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Zapisz lekarza
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Anuluj
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  );
+}

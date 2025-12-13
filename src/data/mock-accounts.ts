@@ -19,8 +19,7 @@ export const mockAccounts: Account[] = [
     role: "admin",
     email: "admin@test.com",
     password: "test123",
-    name: "Ewa Gajda",
-    subtitle: "Admin Dashboard",
+    name: "Kyrylo Kapinos",
+    subtitle: "Panel Administratora",
   },
 ];
-

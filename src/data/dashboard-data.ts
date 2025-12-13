@@ -1,3 +1,5 @@
+import { Doctor } from "@/types/Doctor";
+
 export const patientPortalData = {
   interviewCopy:
     "Describe your symptoms, and our AI assistant will conduct a medical consultation and help schedule an appointment with the appropriate specialist.",
@@ -125,10 +127,13 @@ export const doctorDashboardData = {
       tests: ["Swab", "Blood count"],
       confidence: 0.85,
       visitInfo: {
-        patient: { name: "Jan Kowalski", age: "35 years", pesel: "85010112345" },
+        patient: {
+          name: "Jan Kowalski",
+          age: "35 years",
+          pesel: "85010112345",
+        },
         report: {
-          symptoms:
-            "Sore throat, difficulty swallowing, slight fever (37.8°C)",
+          symptoms: "Sore throat, difficulty swallowing, slight fever (37.8°C)",
           duration: "3 days",
           info: "Patient reports worsening symptoms in the morning.",
           suggestion: "Laryngitis",
@@ -169,8 +174,7 @@ export const doctorDashboardData = {
           pesel: "81040598234",
         },
         report: {
-          symptoms:
-            "Cough persisting for 2 weeks, wheezing during exertion",
+          symptoms: "Cough persisting for 2 weeks, wheezing during exertion",
           duration: "2 weeks",
           info: "Symptoms worsen at night and in the morning.",
           suggestion: "Bronchitis",
@@ -181,51 +185,35 @@ export const doctorDashboardData = {
     },
   ],
 };
-
-export const adminDashboardData = {
-  stats: [
-    { label: "Doctors", value: "3", accent: "bg-blue-100 text-blue-600" },
-    {
-      label: "Patients",
-      value: "156",
-      accent: "bg-emerald-100 text-emerald-600",
-    },
-    {
-      label: "Visits Today",
-      value: "24",
-      accent: "bg-purple-100 text-purple-600",
-    },
-  ],
-  doctors: [
-    {
-      name: "Dr Anna Nowak",
-      email: "a.nowak@clinic.com",
-      specialization: "Otolaryngologist",
-      experience: "15 years",
-      status: "Active",
-    },
-    {
-      name: "Dr Piotr Kowalczyk",
-      email: "p.kowalczyk@clinic.com",
-      specialization: "Otolaryngologist",
-      experience: "12 years",
-      status: "Active",
-    },
-    {
-      name: "Dr Maria Wiśniewska",
-      email: "m.wisniewska@clinic.com",
-      specialization: "Cardiologist",
-      experience: "20 years",
-      status: "Active",
-    },
-  ],
-  formDefaults: {
+export const DOCTORS: Doctor[] = [
+  {
+    id: "1",
     firstName: "Anna",
     lastName: "Nowak",
     email: "a.nowak@clinic.com",
-    specialization: "Otolaryngologist",
-    experience: "15 years",
-    phone: "+48 123 456 789",
-    temporaryPassword: "••••••••",
+    specialization: "Laryngolog",
+    workStartDate: "2025-12-06",
+    phone: "576199224",
+    password: "12dsasw1",
   },
-};
+  {
+    id: "2",
+    firstName: "Piotr",
+    lastName: "Kowalczyk",
+    email: "p.kowalczyk@clinic.com",
+    specialization: "Laryngolog",
+    workStartDate: "2025-12-06",
+    phone: "576199224",
+    password: "12dsasw1",
+  },
+  {
+    id: "3",
+    firstName: "Maria",
+    lastName: "Wiśniewska",
+    email: "m.wisniewska@clinic.com",
+    specialization: "Kardiolog",
+    workStartDate: "2025-12-06",
+    phone: "576199224",
+    password: "12dsasw1",
+  },
+];
