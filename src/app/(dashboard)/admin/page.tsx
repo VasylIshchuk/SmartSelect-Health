@@ -59,31 +59,24 @@ export default function AdminDashboard() {
           className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-white"
         >
           <LogOut className="h-4 w-4" />
-          Wyloguj
+          Log out
         </Link>
       </header>
 
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          Zarządzanie systemem
-        </h1>
-        <p className="text-slate-500">
-          Administruj użytkownikami i ustawieniami
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold text-slate-900">Manage system</h1>
 
       <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2 text-slate-900">
             <Users className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold">Zarządzanie lekarzami</h3>
+            <h3 className="text-lg font-semibold">Manage doctors</h3>
           </div>
           <button
             onClick={() => setView("addDoctor")}
             className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             <UserPlus className="h-4 w-4" />
-            Dodaj lekarza
+            Add new doctor
           </button>
         </div>
 
@@ -92,16 +85,16 @@ export default function AdminDashboard() {
             <thead className="sticky top-0 bg-white border-b border-slate-200 ">
               <tr>
                 <th className="pb-3 font-semibold text-slate-900">
-                  Imię i nazwisko
+                  Name and Surname
                 </th>
                 <th className="pb-3 font-semibold text-slate-900">Email</th>
                 <th className="pb-3 font-semibold text-slate-900">
-                  Specjalizacja
+                  Specialization
                 </th>
                 <th className="pb-3 font-semibold text-slate-900">
-                  Doświadczenie
+                  Start work date
                 </th>
-                <th className="pb-3 font-semibold text-slate-900">Akcje</th>
+                <th className="pb-3 font-semibold text-slate-900">Actions</th>
               </tr>
             </thead>
 
@@ -126,14 +119,14 @@ export default function AdminDashboard() {
                           setView("updateDoctor");
                         }}
                         className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                        title="Edytuj"
+                        title="Edit"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteDoctor(doctor!.id)}
                         className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
-                        title="Usuń"
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

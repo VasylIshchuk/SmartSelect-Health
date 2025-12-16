@@ -10,6 +10,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export default function DoctorDashboard() {
@@ -47,13 +48,14 @@ export default function DoctorDashboard() {
             Zarządzaj wizytami i przeglądaj raporty
           </p>
         </div>
-        <button
+        <Link
+          href={"/login"}
           //   onClick={onLogout}
           className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:bg-white"
         >
           <LogOut className="h-4 w-4" />
-          Wyloguj
-        </button>
+          Log out
+        </Link>
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">

@@ -40,7 +40,7 @@ export function AddDoctor({
     <section className="w-full space-y-6">
       <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
-          Podaj dane nowego lekarza
+          Fill neccesary fields for new doctor
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -50,7 +50,7 @@ export function AddDoctor({
                 htmlFor="firstName"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Imię <span className="text-red-500">*</span>
+                Name <span className="text-red-500">*</span>
               </label>
               <input
                 id="firstName"
@@ -66,7 +66,7 @@ export function AddDoctor({
                 htmlFor="lastName"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Nazwisko <span className="text-red-500">*</span>
+                Surname <span className="text-red-500">*</span>
               </label>
               <input
                 id="lastName"
@@ -102,7 +102,7 @@ export function AddDoctor({
                 htmlFor="specialization"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Specjalizacja <span className="text-red-500">*</span>
+                Specialization <span className="text-red-500">*</span>
               </label>
               <input
                 id="specialization"
@@ -118,7 +118,7 @@ export function AddDoctor({
                 htmlFor="workStartDate"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Doświadczenie
+                Work start date
               </label>
               <input
                 id="workStartDate"
@@ -135,7 +135,7 @@ export function AddDoctor({
               htmlFor="phone"
               className="mb-2 block text-sm font-medium text-slate-700"
             >
-              Telefon <span className="text-red-500">*</span>
+              Phone <span className="text-red-500">*</span>
             </label>
             <input
               id="phone"
@@ -152,7 +152,7 @@ export function AddDoctor({
               htmlFor="password"
               className="mb-2 block text-sm font-medium text-slate-700"
             >
-              Hasło tymczasowe <span className="text-red-500">*</span>
+              Temporary password <span className="text-red-500">*</span>
             </label>
             <input
               id="password"
@@ -169,14 +169,14 @@ export function AddDoctor({
               type="submit"
               className="flex-1 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
-              Zapisz lekarza
+              Add new doctor
             </button>
             <button
               type="button"
               onClick={onCancel}
               className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
             >
-              Anuluj
+              Cancel
             </button>
           </div>
         </form>

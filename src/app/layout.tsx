@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HealthCare Portal",
+  title: "BestChoose",
   description: "Panel logowania i wizyty mockowane dla systemu medycznego.",
 };
 

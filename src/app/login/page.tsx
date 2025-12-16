@@ -48,7 +48,7 @@ export default function LoginScreen() {
             className="text-sm font-medium text-slate-600"
             htmlFor="password"
           >
-            Hasło
+            Password
           </label>
           <div className="relative mt-2">
             <Lock className="absolute left-4 top-3 h-5 w-5 text-slate-400" />
