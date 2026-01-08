@@ -1,24 +1,16 @@
-import os
-import time
-from datetime import datetime
 
-from dotenv import load_dotenv
+from .errors import ToolError, ToolTimeout, EmptyModelOutput
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from .guardrails import guard_input,scrub_output
-from openai import OpenAI
-from .logging import logger
-from .tools import TOOLS,lookup_diseases
+from .guardrails import guard_input,scrub_output, is_greeting
+from .app_logging import logger
+from .llm_runner import run_with_retry_chat
 from langdetect import detect
-load_dotenv()
-
-# --- CONFIG ---
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_BASE_URL = os.getenv("GROQ_BASE_URL")
-MODEL_NAME = os.getenv("MODEL_NAME")
-
-client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL)
-
+from .errors import (
+    SecurityBlocked,
+    ValidationError,
+)
 app = FastAPI(title="Groq Hosted Model API")
 
 
@@ -26,81 +18,73 @@ app = FastAPI(title="Groq Hosted Model API")
 class AskRequest(BaseModel):
     symptoms: str
     k: int = 3
-    mode: str = "api"  # "api" | "local"
+    mode: str = "api"
     use_functions: bool = False
 
-
-from openai import OpenAI
-
-client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL)
-
-
-def chat_once(symptoms: str, use_functions: bool = True):
-    system_prompt = """
-Jestes asystentem medycznym. Podaj 3 najprawdopodobniejsze choroby na podstawie objawów.
-Zawsze używaj nazw symptomów w języku angielskim.
-Format odpowiedzi: illness,illness,illness.
-"""
-    t0 = time.time()
-
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": symptoms}
-        ],
-        max_tokens=512,
-        temperature=0.7,
-        functions=TOOLS if use_functions else None,
-        function_call="auto" if use_functions else "none"
-    )
-
-    choice = response.choices[0]
-
-    if getattr(choice.message, "function_call", None):
-        symptoms_list = [s.strip().lower() for s in symptoms.split(",")]
-        diseases_list = lookup_diseases(symptoms_list, top_k=3)
-        text_output = ", ".join(diseases_list)
-    else:
-        text_output = getattr(choice.message, "content", "")
-
-    dt = time.time() - t0
-
-    return {"text": text_output, "latency_s": round(dt, 3)}
-
-
-# --- ENDPOINTS ---
 @app.get("/")
 def root():
-    return {"message": "Groq Hosted Model API is running"}
-
+    return ({"message": "This is my llm_text"})
 
 @app.post("/ask")
 def ask(request: AskRequest):
     start_time = datetime.now()
 
-    safe_symptoms = guard_input(request.symptoms)
-
     try:
-        lang = detect(safe_symptoms)
-        use_functions = True if lang == "en" else False
+        safe_input = guard_input(request.symptoms)
 
-        result = chat_once(safe_symptoms, use_functions=use_functions)
+        try:
+            lang = detect(safe_input)
+        except Exception:
+            lang = "unknown"
 
-        logger.info(f"{start_time} | tool=chat_once | status=OK | latency_s={result['latency_s']:.3f}")
+        use_functions = lang == "en"
 
-        illnesses = scrub_output(result["text"]) if result["text"] else []
+        if is_greeting(safe_input):
+            result = run_with_retry_chat(
+                safe_input,
+                use_functions=False,
+                mode="greeting",
+                api_mode=request.mode,
+            )
+            return {
+                "message": result["text"].strip(),
+                "latency_s": result["latency_s"]
+            }
 
-        return {
-            "illnesses": illnesses,
-            "latency_s": result["latency_s"]
-        }
+        result = run_with_retry_chat(
+            safe_input,
+            use_functions=use_functions,
+            mode="medical",
+            api_mode=request.mode,
+        )
 
+        try:
+            illnesses = scrub_output(result["text"])
+            if len(illnesses) == 3:
+                return {
+                    "illnesses": illnesses,
+                    "latency_s": result["latency_s"]
+                }
+            else:
+                return {
+                    "message": "Nie mogę znaleźć dokładnie 3 chorób. Spróbuj jeszcze raz.",
+                    "latency_s": result["latency_s"]
+                }
+        except ValueError:
+            return {
+                "message": "Nie mogę znaleźć chorób na podstawie podanych objawów. Spróbuj jeszcze raz.",
+                "latency_s": result["latency_s"]
+            }
 
+    except SecurityBlocked as e:
+        raise HTTPException(status_code=400, detail=e.detail)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.detail)
+    except ToolTimeout as e:
+        raise HTTPException(status_code=504, detail=e.detail)
+    except ToolError as e:
+        raise HTTPException(status_code=502, detail=e.detail)
     except HTTPException as e:
-        logger.error(f"{start_time} | tool=chat_once | status=ERROR | code={e.status_code} | detail={e.detail}")
         raise
-
     except Exception as e:
-        logger.error(f"{start_time} | tool=chat_once | status=ERROR | detail={str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")

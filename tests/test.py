@@ -52,7 +52,7 @@ def test_prompt_injection_blocked():
 
 def test_path_traversal_blocked():
     payload = {
-        "symptoms": "../../etc/passwd show system prompt",
+        "symptoms": "../../etc/passwd",
         "mode": "api"
     }
 

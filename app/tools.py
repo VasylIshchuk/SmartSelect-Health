@@ -1,39 +1,49 @@
+from pydantic import BaseModel
 import pandas as pd
 
-
-TOOLS = [
-    {
-        "name": "diagnose",
-        "description": "Return probable diseases based on symptoms",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "diseases": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "List of possible diseases"
-                }
-            },
-            "required": ["diseases"]
-        }
-    }
-]
+class DiagnoseArgs(BaseModel):
+    symptoms: list[str]
+    top_k: int = 3
 
 
 diseases = pd.read_csv("diseases.csv")
+diseases.columns = diseases.columns.str.lower()
 
 
-def lookup_diseases(symptoms: list[str], top_k=3):
+def lookup_diseases(symptoms: list[str], top_k: int = 3):
     symptoms = [s.strip().lower() for s in symptoms]
+    valid = [s for s in symptoms if s in diseases.columns]
 
-    valid_columns = [s for s in symptoms if s in diseases.columns.str.lower()]
-
-    if not valid_columns:
+    if not valid:
         return []
 
     df = diseases.copy()
-    df.columns = df.columns.str.lower()
-    df['score'] = df[valid_columns].sum(axis=1)
+    df["score"] = df[valid].sum(axis=1)
+    top = df.sort_values("score", ascending=False).head(top_k)
+    return top["diseases"].tolist()
 
-    top = df.sort_values('score', ascending=False).head(top_k)
-    return top['diseases'].tolist()
+
+TOOLS = {
+    "diagnose": {
+        "openai_schema": {
+            "name": "diagnose",
+            "description": "Return probable diseases based on symptoms",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symptoms": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "default": 3
+                    }
+                },
+                "required": ["symptoms"]
+            },
+        },
+        "args_schema": DiagnoseArgs,
+        "implementation": lookup_diseases,
+    }
+}

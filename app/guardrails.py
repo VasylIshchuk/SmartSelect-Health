@@ -1,5 +1,5 @@
 import re
-from fastapi import HTTPException
+from .errors import SecurityBlocked
 
 INJECTION_PATTERNS = [
     r"ignore\s+(all|any|previous)\s+instructions",
@@ -9,67 +9,53 @@ INJECTION_PATTERNS = [
     r"disregard\s+previous",
     r"jailbreak",
     r"developer\s+message",
-    r"<\s*system\s*>",
 ]
 
-PATH_TRAVERSAL_PATTERN = r"(\.\./)+"
+GREETING_PATTERNS = [
+    r"\b(hi|hello|hey|cze[śs]ć|hej|witaj|dzień dobry|dobry wieczór)\b",
+]
+
+PATH_TRAVERSAL_PATTERN = r"(\.\./)|(\.\.\\)|(\./)+"
+
 
 def normalize(text: str) -> str:
     text = text.lower()
     text = re.sub(r"[^a-z0-9\s]", " ", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
+    return re.sub(r"\s+", " ", text).strip()
 
-def injection_score(text: str) -> int:
-    score = 0
+
+def is_greeting(text: str) -> bool:
     norm = normalize(text)
+    return any(re.search(p, norm) for p in GREETING_PATTERNS)
 
-    for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, norm):
-            score += 2
-
-    if "ignore" in norm:
-        score += 1
-    if "instead" in norm:
-        score += 1
-
-    return score
-
-def scrub_input(text: str) -> str:
-    norm = normalize(text)
-    norm = re.sub(
-        r"(ignore|break|reveal|show|disregard)\s+.*",
-        "",
-        norm
-    )
-    return norm[:500]
 
 def guard_input(text: str) -> str:
     if re.search(PATH_TRAVERSAL_PATTERN, text):
-        raise HTTPException(status_code=400, detail="Path traversal detected")
+        raise SecurityBlocked("Path traversal detected")
 
-    score = injection_score(text)
-    if score >= 5:
-        raise HTTPException(status_code=400, detail="Prompt injection detected")
-    if score >= 3:
-        return scrub_input(text)
+    norm = normalize(text)
+    score = sum(bool(re.search(p, norm)) for p in INJECTION_PATTERNS)
+
+    if score >= 2:
+        raise SecurityBlocked("Prompt injection detected")
 
     return text
 
+
 def scrub_output(text: str, max_items: int = 3) -> list[str]:
     if not text or not text.strip():
-        raise ValueError("Empty output from model")
+        raise ValueError("Empty output")
 
-    text = text.lower().strip()
+    text = text.lower()
     items = re.split(r"[,\n;]", text)
-    items = [i.strip() for i in items if 2 < len(i) < 50]
+    items = [i.strip() for i in items if len(i.strip()) >= 2]
 
-    seen = []
-    for item in items:
-        if item not in seen:
-            seen.append(item)
+    unique = []
+    for i in items:
+        if i not in unique:
+            unique.append(i)
 
-    if not seen:
-        raise ValueError("No valid items found in output")
+    if not unique:
+        raise ValueError("No valid items")
 
-    return seen[:max_items]
+    return unique[:max_items]
