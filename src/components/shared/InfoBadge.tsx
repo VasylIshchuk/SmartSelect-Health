@@ -2,7 +2,7 @@
 
 type InfoBadgeProps = {
   label: string;
-  value: string;
+  value: string | number;
 };
 
 export default function InfoBadge({ label, value }: InfoBadgeProps) {

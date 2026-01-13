@@ -1,60 +1,98 @@
 "use client";
 
-import { doctorDashboardData } from "@/data/dashboard-data";
-import type { Account } from "@/types/account";
-import InfoBadge from "../../shared/InfoBadge";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+    AlertCircle,
     CheckCircle2,
     ClipboardCheck,
-    ClipboardClock,
     FileText,
-    Sparkles,
+    Loader2,
     ThumbsDown,
     ThumbsUp,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/components/hoc/AuthSessionProvider";
+import { useDoctor } from "@/hooks/useDoctor";
+import { ReportDetailsCard } from "@/components/shared/ReportDetailsCard";
 
 
 type AiRatingType = "accurate" | "inaccurate" | null;
 
 type DoctorVisitProps = {
-    user: Account;
-    visitId: string;
-    onBack: () => void;
+    appointmentId: string;
 };
 
 
-
 export default function DoctorVisit({
-    user,
-    visitId,
-    onBack,
+    appointmentId,
 }: DoctorVisitProps) {
+    const router = useRouter();
+
     const [diagnosis, setDiagnosis] = useState("");
     const [aiRating, setAiRating] = useState<AiRatingType>(null);
+    const [hasAiReport, setHasAiReport] = useState<boolean>(false)
+
+    const [errorMessage, setErrorMessage] = useState("");
     const [savedMessage, setSavedMessage] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const selectedVisit = useMemo(
-        () =>
-            doctorDashboardData.schedule.find((visit) => visit.id === visitId) ??
-            doctorDashboardData.schedule[0],
-        [visitId]
-    );
+    const { session } = useSession();
+    const { completeVisit, getIsReport } = useDoctor(session?.user?.id);
 
-    const handleSave = () => {
-        setSavedMessage("The appointment has been saved");
+    const handleSave = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        try {
+            const success = await completeVisit({
+                appointmentId: appointmentId,
+                diagnosis: diagnosis,
+                aiRating: aiRating
+            });
+
+            if (success) {
+                setSavedMessage("The appointment has been saved");
+                setTimeout(() => {
+                    router.back();
+                }, 1000);
+            } else {
+                setErrorMessage("Failed to save the visit. Please try again.");
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            setErrorMessage("An unexpected error occurred.");
+            setIsSubmitting(false);
+        }
     };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadData = async () => {
+            try {
+                const hasReport = await getIsReport(appointmentId);
+                if (isMounted) setHasAiReport(hasReport);
+            } catch (error) {
+                console.error("Failed to check AI report status", error);
+            }
+        };
+
+        loadData();
+        return () => { isMounted = false; };
+    }, [appointmentId, getIsReport]);
+
 
     return (
         <section className="w-full space-y-8">
             <SectionHeader
                 title="Appointment Details"
                 subtitle="Patient information and AI analysis summary"
-                onBack={onBack}
+                onBack={() => router.back()}
             />
 
-            <AppointmentDetailsCard visit={selectedVisit} />
+            <ReportDetailsCard appointmentId={appointmentId} />
 
             <DiagnosisFormCard
                 diagnosis={diagnosis}
@@ -63,100 +101,14 @@ export default function DoctorVisit({
                 setAiRating={setAiRating}
                 onSave={handleSave}
                 savedMessage={savedMessage}
+                errorMessage={errorMessage}
+                hasAiReport={hasAiReport}
+                isSubmitting={isSubmitting}
             />
         </section>
     );
 }
 
-
-const AppointmentDetailsCard = ({ visit }: { visit: any }) => {
-    const hasReport = visit?.hasReport && visit.visitInfo;
-
-    return (
-        <section className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-            <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                    <ClipboardClock className="h-5 w-5" />
-                </div>
-                <div>
-                    <p className="text-xl font-semibold text-slate-900">
-                        Selected Appointment
-                    </p>
-                    <p className="text-sm text-slate-500">
-                        Review AI preliminary report summary and symptoms
-                    </p>
-                </div>
-            </div>
-
-            {hasReport ? (
-                <>
-                    <div className="grid gap-3 text-sm text-slate-600">
-                        <InfoBadge label="Full Name" value={visit.visitInfo.patient.name} />
-                        <InfoBadge label="Age" value={visit.visitInfo.patient.age} />
-                        <InfoBadge label="PESEL" value={visit.visitInfo.patient.pesel} />
-                    </div>
-                    <AiReportSummary report={visit.visitInfo.report} />
-                </>
-            ) : (
-                <div className="rounded-3xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">
-                    No AI report available for this appointment.
-                </div>
-            )}
-        </section>
-    );
-};
-
-
-const AiReportSummary = ({ report }: { report: any }) => {
-    return (
-        <div className="rounded-3xl border border-purple-100 bg-linear-to-br from-purple-50 to-white p-5">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-semibold text-purple-700">
-                        AI Preliminary Report
-                    </p>
-                    <p className="text-xs text-slate-500">
-                        Confidence: {Math.round((report.confidence ?? 0) * 100)}%
-                    </p>
-                </div>
-                <Sparkles className="h-5 w-5 text-purple-400" />
-            </div>
-
-            <dl className="mt-4 space-y-3 text-sm text-slate-700">
-                <div>
-                    <dt className="font-semibold text-slate-900">Reported Symptoms</dt>
-                    <dd>{report.symptoms}</dd>
-                </div>
-                <div>
-                    <dt className="font-semibold text-slate-900">Duration</dt>
-                    <dd>{report.duration}</dd>
-                </div>
-                <div>
-                    <dt className="font-semibold text-slate-900">Additional Information</dt>
-                    <dd>{report.info}</dd>
-                </div>
-            </dl>
-
-            <div className="mt-4 rounded-2xl bg-white/90 p-4">
-                <p className="text-xs uppercase text-purple-500">AI Suggestion</p>
-                <p className="text-lg font-semibold text-purple-900">
-                    {report.suggestion}
-                </p>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-                {report.tests.map((test: string) => (
-                    <span
-                        key={test}
-                        className="rounded-full border border-purple-100 bg-white px-4 py-1 text-xs font-medium text-purple-900"
-                    >
-                        {test}
-                    </span>
-                ))}
-            </div>
-        </div>
-    );
-};
 
 
 
@@ -167,6 +119,9 @@ type DiagnosisFormCardProps = {
     setAiRating: (val: AiRatingType) => void;
     onSave: () => void;
     savedMessage: string;
+    errorMessage: string;
+    hasAiReport: boolean;
+    isSubmitting: boolean;
 };
 
 const DiagnosisFormCard = ({
@@ -176,7 +131,17 @@ const DiagnosisFormCard = ({
     setAiRating,
     onSave,
     savedMessage,
+    errorMessage,
+    hasAiReport,
+    isSubmitting,
 }: DiagnosisFormCardProps) => {
+
+    const isDiagnosisFilled = diagnosis.trim().length > 0;
+
+    const isAiValidationSatisfied = hasAiReport ? aiRating !== null : true;
+
+    const isSaveEnabled = isDiagnosisFilled && isAiValidationSatisfied && !isSubmitting;
+
     return (
         <section className="rounded-3xl bg-white p-6 shadow-lg shadow-slate-200/50 ring-1 ring-slate-100">
             <div className="mb-6 flex items-center gap-3">
@@ -210,39 +175,60 @@ const DiagnosisFormCard = ({
                 />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
-                <p className="mb-3 text-center text-sm font-medium text-slate-600 sm:text-left">
-                    How accurate was the AI suggestion?
-                </p>
-                <div className="flex gap-3">
-                    <AiRatingButton
-                        type="accurate"
-                        currentRating={aiRating}
-                        onClick={() => setAiRating("accurate")}
-                    />
-                    <AiRatingButton
-                        type="inaccurate"
-                        currentRating={aiRating}
-                        onClick={() => setAiRating("inaccurate")}
-                    />
+            {hasAiReport && (
+                <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+                    <p className="mb-3 text-center text-sm font-medium text-slate-600 sm:text-left">
+                        How accurate was the AI suggestion?
+                    </p>
+                    <div className="flex gap-3">
+                        <AiRatingButton
+                            type="accurate"
+                            currentRating={aiRating}
+                            onClick={() => setAiRating("accurate")}
+                        />
+                        <AiRatingButton
+                            type="inaccurate"
+                            currentRating={aiRating}
+                            onClick={() => setAiRating("inaccurate")}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
+            
+            {errorMessage && (
+                <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {errorMessage}
+                </div>
+            )}
 
             <button
                 type="button"
                 onClick={onSave}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-lg active:scale-[0.99]"
+                disabled={!isSaveEnabled}
+                className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold text-white shadow-md transition-all 
+                    ${isSaveEnabled
+                        ? 'bg-blue-600 shadow-blue-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.99]'
+                        : 'bg-slate-400 cursor-not-allowed opacity-50 shadow-none'
+                    }`}
             >
-                <ClipboardCheck className="h-5 w-5" />
-                Save and End Appointment
+                {isSubmitting ? (
+                    <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Saving Appointment...
+                    </>
+                ) : savedMessage ? (
+                    <>
+                        <CheckCircle2 className="h-5 w-5" />
+                        {savedMessage}
+                    </>
+                ) : (
+                    <>
+                        <ClipboardCheck className="h-5 w-5" />
+                        Save and End Appointment
+                    </>
+                )}
             </button>
-
-            {savedMessage && (
-                <div className="mt-4 flex animate-in fade-in slide-in-from-bottom-2 items-center justify-center gap-2 rounded-2xl bg-emerald-50 py-3 text-sm font-medium text-emerald-700">
-                    <CheckCircle2 className="h-5 w-5" />
-                    {savedMessage}
-                </div>
-            )}
         </section>
     );
 };

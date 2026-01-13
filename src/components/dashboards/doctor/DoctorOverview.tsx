@@ -1,48 +1,70 @@
 "use client";
 
-import { DoctorView } from "./DoctorDashboard";
 import DashboardHeader from "../DashboardHeader";
-import { doctorDashboardData } from "@/data/dashboard-data";
-import type { Account } from "@/types/account";
 import {
     CalendarDays,
     Clock,
     User,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { DashboardStats, DoctorAppointment, useDoctor } from "@/hooks/useDoctor";
+import { useSession } from "@/components/hoc/AuthSessionProvider";
+import { useEffect, useMemo, useState } from "react";
 
 
-type VisitData = typeof doctorDashboardData.schedule[number];
+export default function DoctorOverview() {
+    const router = useRouter();
 
-type DoctorOverviewProps = {
-    user: Account;
-    onLogout: () => void;
-    onNavigate: (view: DoctorView) => void;
-    onVisitSelect: (id: string) => void;
-};
+    const { session } = useSession();
+    const { getUpcomingAppointments, getStats } = useDoctor(session?.user?.id);
 
+    const [schedule, setSchedule] = useState<DoctorAppointment[]>([]);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
 
-export default function DoctorOverview({
-    user,
-    onLogout,
-    onNavigate,
-    onVisitSelect,
-}: DoctorOverviewProps) {
+    useEffect(() => {
+        let isMounted = true;
+        const loadData = async () => {
+            const appointmentsData = await getUpcomingAppointments();
+            const statsData = await getStats();
+
+            if (isMounted) {
+                setSchedule(appointmentsData);
+                if (statsData) setStats(statsData);
+            }
+        };
+
+        loadData();
+        return () => { isMounted = false; };
+    }, [session, getUpcomingAppointments, getStats]);
 
     const handleVisitInteraction = (visitId: string) => {
-        onVisitSelect(visitId);
-        onNavigate("visit");
+        router.push(`/doctor/visit/${visitId}`);
     };
+
+    const statsList = useMemo(() => [
+        {
+            label: "Appointments Today",
+            value: stats?.todayAppointments ?? 0,
+        },
+        {
+            label: "Appointments with AI Report",
+            value: stats?.aiReports ?? 0,
+        },
+        {
+            label: "Total Patients",
+            value: stats?.totalPatients ?? 0,
+        },
+    ], [stats]);
 
     return (
         <section className="w-full space-y-8">
-            <DashboardHeader user={user} onLogout={onLogout} />
+            <DashboardHeader />
 
-            <StatsGrid stats={doctorDashboardData.stats} />
+            <StatsGrid stats={statsList} />
 
             <div className="grid gap-6">
                 <ScheduleSection
-                    date={doctorDashboardData.scheduleDate}
-                    schedule={doctorDashboardData.schedule}
+                    schedule={schedule}
                     onVisitClick={handleVisitInteraction}
                 />
             </div>
@@ -50,7 +72,13 @@ export default function DoctorOverview({
     );
 }
 
-const StatsGrid = ({ stats }: { stats: typeof doctorDashboardData.stats }) => (
+
+type StatItem = {
+    label: string;
+    value: number;
+};
+
+const StatsGrid = ({ stats }: { stats: StatItem[] }) => (
     <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
             <StatCard key={stat.label} label={stat.label} value={stat.value} />
@@ -66,35 +94,50 @@ const StatCard = ({ label, value }: { label: string; value: string | number }) =
 );
 
 const ScheduleSection = ({
-    date,
     schedule,
     onVisitClick,
 }: {
-    date: string;
-    schedule: VisitData[];
+    schedule: DoctorAppointment[];
     onVisitClick: (id: string) => void;
 }) => {
+    const [formattedDate, setFormattedDate] = useState<string>("");
+
+    useEffect(() => {
+        setFormattedDate(new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+        }));
+    }, []);
+
     return (
         <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
             <div className="mb-6 flex items-center justify-between">
                 <div>
                     <p className="text-sm text-slate-500">Appointment Calendar</p>
-                    <h3 className="text-2xl font-semibold text-slate-900">{date}</h3>
+                    <h3 className="text-2xl font-semibold text-slate-900">{formattedDate}</h3>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full shrink-0 bg-slate-50">
                     <CalendarDays className="h-5 w-5 text-slate-400 " />
                 </div>
             </div>
 
-            <div className="mt-6 space-y-4">
-                {schedule.map((visit) => (
-                    <AppointmentCard
-                        key={visit.id}
-                        visit={visit}
-                        onClick={() => onVisitClick(visit.id)}
-                    />
-                ))}
-            </div>
+            {schedule.length > 0 ? (
+                <div className="mt-6 space-y-4">
+                    {schedule.map((visit) => (
+                        <AppointmentCard
+                            key={visit.id}
+                            visit={visit}
+                            onClick={() => onVisitClick(visit.id)}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
+                    No appointments scheduled for today
+                </div>
+            )}
         </section>
     );
 };
@@ -103,7 +146,7 @@ const AppointmentCard = ({
     visit,
     onClick
 }: {
-    visit: VisitData;
+    visit: DoctorAppointment;
     onClick: () => void;
 }) => {
     return (
@@ -119,7 +162,7 @@ const AppointmentCard = ({
 
                     <div className="flex-1">
                         <p className="line-clamp-1 break-all font-semibold text-slate-900">
-                            {visit.patient}
+                            {visit.patientName}
                         </p>
                         <p className="text-sm text-slate-500">{visit.type}</p>
                     </div>
@@ -133,7 +176,7 @@ const AppointmentCard = ({
                     </div>
                 </div>
 
-                {visit.hasReport && (
+                {visit.hasAiReport && (
                     <span className="inline-flex shrink-0 items-center rounded-full w-fit bg-purple-100 px-2.5 py-0.5 text-xs font-bold text-purple-700">
                         AI Report
                     </span>

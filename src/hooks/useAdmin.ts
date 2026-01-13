@@ -26,6 +26,8 @@ export const useAdmin = () => {
       const { data: user } = await supabaseAdmin.auth.admin.createUser({
         email: newDoctor.email,
         password: newDoctor.password,
+        email_confirm: true,
+
         user_metadata: {
           first_name: newDoctor.first_name,
           last_name: newDoctor.last_name,
