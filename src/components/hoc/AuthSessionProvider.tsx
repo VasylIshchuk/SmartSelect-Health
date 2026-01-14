@@ -1,12 +1,8 @@
 "use client";
 
 import React, { createContext, useEffect, useState } from "react";
-import { createClient, Session } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { Session } from "@supabase/supabase-js";
+import { supabase } from "@/api/supabase";
 
 type ExtendedSession =
   | (Session & {
@@ -35,7 +31,7 @@ export const AuthSessionProvider = ({
   ): Promise<ExtendedSession> => {
     if (!session) return null;
     const { data } = await supabase
-      .from("users")
+      .from("profiles")
       .select("role")
       .eq("id", session.user.id)
       .single();

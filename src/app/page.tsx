@@ -1,17 +1,15 @@
 "use client";
-import { useSession } from "@/components/hoc/AuthSessionProvider";
+
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 export default function Home() {
   const router = useRouter();
-  const { session } = useSession();
+
   useEffect(() => {
-    if (!session) {
-      router.push("/login");
-    } else {
-      router.push("/(dashboard)/" + session.role);
-    }
-  }, [router, session]);
-  return <div></div>;
+    router.replace("/login");
+  }, [router]);
+
+  return <LoadingSpinner message="Redirecting..." />;
 }

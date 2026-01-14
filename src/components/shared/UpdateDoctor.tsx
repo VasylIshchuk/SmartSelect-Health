@@ -1,186 +1,222 @@
-import { Doctor } from "@/types/Doctor";
-import { useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+
+type DoctorWithProfile = {
+  id: string;
+  specialization: string | null;
+  work_start_date: string | null;
+  profile?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    role: string | null;
+  };
+};
+
+const updateDoctorSchema = z.object({
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  specialization: z.string().min(1, "Specialization is required"),
+  work_start_date: z.string().optional(),
+});
 
 export function UpdateDoctor({
-  onBack,
-  onCancel,
   doctor,
+  isLoading: isLoadingDoctor,
 }: {
-  onBack: () => void;
-  onCancel: () => void;
-  doctor: Doctor;
+  doctor: DoctorWithProfile | null;
+  isLoading: boolean;
 }) {
-  const [firstName, setFirstName] = useState(doctor?.firstName ?? "");
-  const [lastName, setLastName] = useState(doctor?.lastName ?? "");
-  const [email, setEmail] = useState(doctor?.email ?? "");
-  const [specialization, setSpecialization] = useState(
-    doctor?.specialization ?? ""
-  );
-  const [workStartDate, setWorkStartDate] = useState(
-    doctor?.workStartDate ?? ""
-  );
-  console.log(workStartDate);
-  const [phone, setPhone] = useState(doctor?.phone ?? "");
-  const [password, setPassword] = useState(doctor?.password ?? "");
+  const router = useRouter();
+  const onClick = useCallback(() => {
+    router.refresh();
+    router.push("/admin");
+  }, [router]);
+  const { updateDoctor, isLoading: isUpdating } = useAdmin();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const isLoading = isLoadingDoctor || isUpdating;
 
-    const updatedDoctor: Doctor = {
-      id: doctor!.id,
-      firstName,
-      lastName,
-      email,
-      specialization,
-      workStartDate: workStartDate.toString(),
-      phone,
-      password,
-    };
-    alert("Zmieniono dane lekarza!");
-    onBack();
+  const form = useForm<z.infer<typeof updateDoctorSchema>>({
+    resolver: zodResolver(updateDoctorSchema),
+    defaultValues: {
+      first_name: doctor?.profile?.first_name ?? "",
+      last_name: doctor?.profile?.last_name ?? "",
+      specialization: doctor?.specialization ?? "",
+      work_start_date: doctor?.work_start_date ?? "",
+    },
+  });
+
+  useEffect(() => {
+    if (doctor && !isLoadingDoctor) {
+      const formData = {
+        first_name: doctor.profile?.first_name ?? "",
+        last_name: doctor.profile?.last_name ?? "",
+        specialization: doctor.specialization ?? "",
+        work_start_date: doctor.work_start_date ?? "",
+      };
+      form.reset(formData);
+    }
+  }, [doctor, isLoadingDoctor, form]);
+
+  const handleSubmit = async (data: z.infer<typeof updateDoctorSchema>) => {
+    if (!doctor) return;
+
+    const success = await updateDoctor(doctor.id, {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      specialization: data.specialization,
+      work_start_date: data.work_start_date || "",
+    });
+
+    if (success) {
+      toast.success("Doctor information has been updated!");
+      onClick();
+    } else {
+      toast.error("Failed to update doctor information");
+    }
   };
 
   return (
     <section className="w-full space-y-6">
       <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
         <h2 className="mb-6 text-lg font-semibold text-slate-900">
-          Zmien dane lekarza
+          Edit Doctor Information
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="firstName"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Imię <span className="text-red-500">*</span>
+                First Name <span className="text-red-500">*</span>
               </label>
-              <input
-                id="firstName"
-                type="text"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              <Controller
+                name="first_name"
+                control={form.control}
+                render={({ field }) => (
+                  <input
+                    id="firstName"
+                    type="text"
+                    {...field}
+                    disabled={isLoadingDoctor}
+                    placeholder={
+                      isLoadingDoctor ? "Loading doctor data..." : ""
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                )}
               />
+              {form.formState.errors.first_name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {form.formState.errors.first_name.message}
+                </p>
+              )}
             </div>
             <div>
               <label
                 htmlFor="lastName"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Nazwisko <span className="text-red-500">*</span>
+                Last Name <span className="text-red-500">*</span>
               </label>
-              <input
-                id="lastName"
-                type="text"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              <Controller
+                name="last_name"
+                control={form.control}
+                render={({ field }) => (
+                  <input
+                    id="lastName"
+                    type="text"
+                    {...field}
+                    disabled={isLoadingDoctor}
+                    placeholder={
+                      isLoadingDoctor ? "Loading doctor data..." : ""
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                )}
               />
+              {form.formState.errors.last_name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {form.formState.errors.last_name.message}
+                </p>
+              )}
             </div>
           </div>
 
           <div>
             <label
-              htmlFor="email"
+              htmlFor="specialization"
               className="mb-2 block text-sm font-medium text-slate-700"
             >
-              Email <span className="text-red-500">*</span>
+              Specialization <span className="text-red-500">*</span>
             </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+            <Controller
+              name="specialization"
+              control={form.control}
+              render={({ field }) => (
+                <input
+                  id="specialization"
+                  type="text"
+                  {...field}
+                  disabled={isLoadingDoctor}
+                  placeholder={isLoadingDoctor ? "Loading doctor data..." : ""}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              )}
             />
+            {form.formState.errors.specialization && (
+              <p className="mt-1 text-sm text-red-600">
+                {form.formState.errors.specialization.message}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label
-                htmlFor="specialization"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Specjalizacja <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="specialization"
-                type="text"
-                required
-                value={specialization}
-                onChange={(e) => setSpecialization(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
-              />
-            </div>
-            <div>
-              <label
                 htmlFor="workStartDate"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
-                Doświadczenie
+                Work Start Date
               </label>
-              <input
-                id="workStartDate"
-                type="date"
-                value={workStartDate}
-                onChange={(e) => setWorkStartDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
+              <Controller
+                name="work_start_date"
+                control={form.control}
+                render={({ field }) => (
+                  <input
+                    id="workStartDate"
+                    type="date"
+                    {...field}
+                    disabled={isLoadingDoctor}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                )}
               />
             </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="phone"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              Telefon <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="phone"
-              required
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-medium text-slate-700"
-            >
-              Hasło tymczasowe <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
-            />
           </div>
 
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              disabled={isLoading}
+              className="flex-1 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Zapisz lekarza
+              {isLoading ? "Saving..." : "Save Doctor"}
             </button>
             <button
               type="button"
-              onClick={onCancel}
-              className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              onClick={onClick}
+              disabled={isLoading}
+              className="rounded-2xl border border-slate-200 px-6 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Anuluj
+              Cancel
             </button>
           </div>
         </form>

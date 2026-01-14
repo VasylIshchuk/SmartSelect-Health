@@ -2,25 +2,31 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Lock, Mail, Stethoscope, User2Icon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export default function RegisterScreen() {
-  const { register } = useAuth();
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [firstName, setFirstName] = useState<string>("");
+  const { register: registerUser, isLoading } = useAuth();
 
-  const [lastName, setLastName] = useState<string>("");
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
+  });
 
-  const onSubmitRegister = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    await register({
-      email,
-      password,
-      first_name: firstName,
-      last_name: lastName,
+  const onSubmitRegister = async (data: z.infer<typeof registerSchema>) => {
+    await registerUser({
+      email: data.email,
+      password: data.password,
+      first_name: data.firstName,
+      last_name: data.lastName,
     });
-    console.log("register");
   };
   return (
     <main>
@@ -37,7 +43,10 @@ export default function RegisterScreen() {
           </h1>
         </div>
 
-        <form className="space-y-5" onSubmit={onSubmitRegister}>
+        <form
+          className="space-y-5"
+          onSubmit={form.handleSubmit(onSubmitRegister)}
+        >
           <div>
             <label
               className="text-sm font-medium text-slate-600"
@@ -50,12 +59,15 @@ export default function RegisterScreen() {
               <input
                 id="firstName"
                 type="text"
-                required
-                value={firstName}
-                onChange={(event) => setFirstName(event.target.value)}
+                {...form.register("firstName")}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-11 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
               />
             </div>
+            {form.formState.errors.firstName && (
+              <p className="mt-1 text-sm text-red-600">
+                {form.formState.errors.firstName.message}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -69,12 +81,15 @@ export default function RegisterScreen() {
               <input
                 id="lastName"
                 type="text"
-                required
-                value={lastName}
-                onChange={(event) => setLastName(event.target.value)}
+                {...form.register("lastName")}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-11 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
               />
             </div>
+            {form.formState.errors.lastName && (
+              <p className="mt-1 text-sm text-red-600">
+                {form.formState.errors.lastName.message}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -88,13 +103,16 @@ export default function RegisterScreen() {
               <input
                 id="email"
                 type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                {...form.register("email")}
                 placeholder="twoj@email.com"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-11 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
               />
             </div>
+            {form.formState.errors.email && (
+              <p className="mt-1 text-sm text-red-600">
+                {form.formState.errors.email.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -109,13 +127,16 @@ export default function RegisterScreen() {
               <input
                 id="password"
                 type="password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                {...form.register("password")}
                 placeholder="••••••••"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-11 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
               />
             </div>
+            {form.formState.errors.password && (
+              <p className="mt-1 text-sm text-red-600">
+                {form.formState.errors.password.message}
+              </p>
+            )}
 
             <Link
               href={"/login"}
@@ -125,17 +146,12 @@ export default function RegisterScreen() {
             </Link>
           </div>
 
-          {/* {error && (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
-              {error}
-            </p>
-          )} */}
-
           <button
             type="submit"
-            className="w-full rounded-2xl bg-blue-600 py-3 text-base font-semibold text-white transition hover:bg-blue-700"
+            disabled={isLoading}
+            className="w-full rounded-2xl bg-blue-600 py-3 text-base font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Register
+            {isLoading ? "Registering..." : "Register"}
           </button>
         </form>
       </div>
