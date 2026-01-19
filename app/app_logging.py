@@ -1,12 +1,7 @@
-import logging
+from loguru import logger
+import sys
+import os
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.FileHandler("api.log"),
-        logging.StreamHandler()
-    ]
-)
+logger.add("api.log", rotation="5 MB", level="INFO", backtrace=True, diagnose=True)
+logger.add(sys.stdout, level="DEBUG")
 
-logger = logging.getLogger("api")

@@ -1,7 +1,6 @@
 import concurrent.futures
 from .tools import TOOLS
 
-
 def execute_tool(name: str, arguments: dict, timeout: int = 3):
     if name not in TOOLS:
         return {"error": "tool_not_allowed"}
@@ -19,8 +18,10 @@ def execute_tool(name: str, arguments: dict, timeout: int = 3):
         future = executor.submit(lambda: impl(**validated.dict()))
         try:
             result = future.result(timeout=timeout)
+
             return {"ok": True, "result": result}
         except concurrent.futures.TimeoutError:
             return {"error": "timeout"}
         except Exception as e:
+
             return {"error": "tool_failed", "details": str(e)}

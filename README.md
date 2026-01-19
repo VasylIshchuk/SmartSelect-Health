@@ -10,7 +10,10 @@
 3. Zainstaluj wymagania:
    pip install -r requirements.txt
 4. Utwórz plik `.env` z kluczem API:
-   GROQ_API_KEY=twoj_klucz
+   OPENAI_API_KEY=sk-proj-...  OpenAI API
+   GROQ_API_KEY=gsk_...  Groq Cloud (groq.com)
+   GROQ_BASE_URL=https://api.groq.com/openai/v1
+   MODEL_NAME=openai/gpt-oss-20b   
 
 ## Uruchomienie
 uvicorn app.main:app --reload 

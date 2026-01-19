@@ -1,9 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,conlist
 import pandas as pd
 
 class DiagnoseArgs(BaseModel):
-    symptoms: list[str]
+    symptoms: conlist(str, min_length=1, max_length=3)
     top_k: int = 3
+
+class ModelResponse(BaseModel):
+    illnesses: conlist(str, min_length=1, max_length=3)
+
+    class Config:
+        extra = "forbid"
 
 
 diseases = pd.read_csv("diseases.csv")

@@ -1,6 +1,6 @@
 import re
 from .errors import SecurityBlocked
-
+from .app_logging import logger
 INJECTION_PATTERNS = [
     r"ignore\s+(all|any|previous)\s+instructions",
     r"break\s+(the\s+)?system",
@@ -11,9 +11,7 @@ INJECTION_PATTERNS = [
     r"developer\s+message",
 ]
 
-GREETING_PATTERNS = [
-    r"\b(hi|hello|hey|cze[śs]ć|hej|witaj|dzień dobry|dobry wieczór)\b",
-]
+
 
 PATH_TRAVERSAL_PATTERN = r"(\.\./)|(\.\.\\)|(\./)+"
 
@@ -24,33 +22,37 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def is_greeting(text: str) -> bool:
-    norm = normalize(text)
-    return any(re.search(p, norm) for p in GREETING_PATTERNS)
+
+def guard_input(text: list[str]) -> list[str]:
+    norm = []
+    for item in text:
+        if re.search(PATH_TRAVERSAL_PATTERN, item):
+            logger.error("PATH_TRAVERSAL_PATTERN DETECTED")
+            raise SecurityBlocked("Path traversal detected")
+        norm.append(normalize(item))
+
+    for i in norm:
+        score = sum(bool(re.search(p, i)) for p in INJECTION_PATTERNS)
+        if score >= 2:
+            raise SecurityBlocked("Prompt injection detected")
+
+    return norm
 
 
-def guard_input(text: str) -> str:
-    if re.search(PATH_TRAVERSAL_PATTERN, text):
-        raise SecurityBlocked("Path traversal detected")
 
-    norm = normalize(text)
-    score = sum(bool(re.search(p, norm)) for p in INJECTION_PATTERNS)
+def scrub_output(text, max_items: int = 3):
+    if isinstance(text, list):
+        return text[:max_items]
 
-    if score >= 2:
-        raise SecurityBlocked("Prompt injection detected")
-
-    return text
-
-
-def scrub_output(text: str, max_items: int = 3) -> list[str] | str:
     if not text or not text.strip():
+        logger.error("Empty output")
+
         raise ValueError("Empty output")
 
     if text.count(",") < 2:
-        print("text in guardrails fast return", text)
         return text
-    text = text.lower()
 
+    text = text.lower()
     items = re.split(r"[,\n;]", text)
     items = [i.strip() for i in items if len(i.strip()) >= 2]
 
