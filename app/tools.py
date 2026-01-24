@@ -4,10 +4,10 @@ import pandas as pd
 
 
 class MedicalReport(BaseModel):
-    summary: str = Field(..., description="A brief summary of the patient's reported condition and history")
+    reported_summary: str = Field(..., description="A brief summary of the patient's reported condition and history")
     reported_symptoms: str = Field(...,description="String containing symptoms extracted from the patient's description, "
                                                    "separated by commas (e.g. 'fever, headache, fatigue')." )
-    duration: str = Field(..., description="Duration of symptoms as reported by the patient (e.g., '2 days', 'since yesterday')")
+    sickness_duration: str = Field(..., description="Duration of symptoms as reported by the patient (e.g., '2 days', 'since yesterday')")
     ai_diagnosis_suggestion: str = Field(..., description="Primary preliminary diagnosis suggestion based on the analysis")
     ai_recommended_specializations: List[str] = Field(..., description="List of recommended medical specialists (e.g.,"
                                                                    " 'Dermatologist', 'General Practitioner')")
