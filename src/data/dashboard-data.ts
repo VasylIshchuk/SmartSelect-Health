@@ -1,4 +1,3 @@
-
 export const patientPortalData = {
   aiCard: {
     label: "AI Medical Assistant",
@@ -23,13 +22,5 @@ export const patientPortalData = {
 export const patientInterview = {
   title: "AI Medical Assistant",
   subtitle: "Medical Interview",
-  initialMessages: [
-    {
-      id: "msg-1",
-      author: "ai" as const,
-      text: "Hello! I am an AI medical assistant. Please tell me what concerns you? What are your symptoms?",
-      time: "14:28",
-    },
-  ],
   inputPlaceholder: "Describe your symptoms...",
 };

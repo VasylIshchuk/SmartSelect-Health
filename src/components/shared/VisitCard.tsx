@@ -11,7 +11,7 @@ export const VisitCard = ({ appointment }: { appointment: Appointment }) => (
                     <User className="h-6 w-6" />
                 </div>
                 <div>
-                    <p className="text-lg font-semibold text-slate-900">{appointment.first_name} {appointment.last_name}</p>
+                    <p className="text-lg font-semibold text-slate-900">{appointment.firstName} {appointment.lastName}</p>
                     <p className="text-sm text-slate-500">{appointment.specialization}</p>
                 </div>
             </div>
@@ -26,7 +26,7 @@ export const VisitCard = ({ appointment }: { appointment: Appointment }) => (
             <div className="flex items-center gap-2 text-sm text-slate-600">
                 <Clock className="h-4 w-4 text-slate-400" />
                 <span>
-                    {appointment.time} <span className="text-slate-400">({appointment.duration})</span>
+                    {appointment.time} <span className="text-slate-400">({appointment.duration} min)</span>
                 </span>
             </div>
 

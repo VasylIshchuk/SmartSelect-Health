@@ -4,16 +4,18 @@ import { ClipboardClock, Sparkles, Star, Stethoscope } from "lucide-react";
 import InfoBadge from "./InfoBadge";
 import { useSession } from "../hoc/AuthSessionProvider";
 import { useEffect, useState } from "react";
-import { ReportDetails, useReport } from "@/hooks/useReport";
+import { useReport } from "@/hooks/useReport";
+import { AiReportData, SummaryReportDetails } from "@/types/report";
+
 
 export const ReportDetailsCard = ({ appointmentId }: { appointmentId: string }) => {
     const { session } = useSession();
     const { getReportDetails } = useReport(session?.user?.id);
 
-    const [reportDetails, setReportDetails] = useState<ReportDetails | null>(null);
+    const [reportDetails, setReportDetails] = useState<SummaryReportDetails | null>(null);
     useEffect(() => {
         let isMounted = true;
-        
+
         const loadData = async () => {
             const data = await getReportDetails(appointmentId);
             if (isMounted) setReportDetails(data);
@@ -48,7 +50,7 @@ export const ReportDetailsCard = ({ appointmentId }: { appointmentId: string }) 
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 text-sm text-slate-600">
-                <InfoBadge label="Full Name" value={`${reportDetails.patient.firstName} ${reportDetails.patient.lastName}`} />
+                <InfoBadge label="Full Name" value={`${reportDetails.patient.first_name} ${reportDetails.patient.last_name}`} />
                 <InfoBadge label="Age" value={reportDetails.patient.age} />
                 <InfoBadge label="PESEL" value={reportDetails.patient.pesel} />
             </div>
@@ -59,82 +61,122 @@ export const ReportDetailsCard = ({ appointmentId }: { appointmentId: string }) 
 };
 
 
-const ReportSummary = ({ reportDetails }: { reportDetails: ReportDetails }) => {
-    const { details, doctor, doctor_final_diagnosis, symptoms } = reportDetails;
+const ReportSummary = ({ reportDetails }: { reportDetails: SummaryReportDetails }) => {
+    const { details, reported_symptoms } = reportDetails;
 
-    const hasDoctorDiagnosis = !!doctor_final_diagnosis;
-    const hasAiRating = details?.doctor_feedback_ai_rating !== null && details?.doctor_feedback_ai_rating !== undefined;
+    if (!details) {
+        return (
+            <NoAiRaport />
+        )
+    }
+
+    const aiReportData: AiReportData = {
+        reported_summary: details.reported_summary,
+        sickness_duration: details.sickness_duration,
+        ai_diagnosis_suggestion: details.ai_diagnosis_suggestion,
+        ai_confidence_score: details.ai_confidence_score,
+        ai_recommended_specializations: details.ai_recommended_specializations,
+        reported_symptoms: reported_symptoms,
+    }
 
     return (
         <div className="space-y-6">
             {details ? (
-                <div className="rounded-3xl border border-purple-100 bg-linear-to-br from-purple-50 to-white p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-purple-700">
-                                AI Preliminary Report
-                            </p>
-                            <p className="text-xs text-slate-500">
-                                Confidence: {Math.round((details.confidence ?? 0) * 100)}%
-                            </p>
-                        </div>
-                        <Sparkles className="h-5 w-5 text-purple-400" />
-                    </div>
-
-                    <dl className="mt-4 space-y-3 text-sm text-slate-700">
-                        <div>
-                            <dt className="font-semibold text-slate-900">Reported Symptoms</dt>
-                            <dd>{symptoms}</dd>
-                        </div>
-                        <div>
-                            <dt className="font-semibold text-slate-900">Duration</dt>
-                            <dd>{details.duration}</dd>
-                        </div>
-                        <div>
-                            <dt className="font-semibold text-slate-900">Summary</dt>
-                            <dd>{details.summary}</dd>
-                        </div>
-                    </dl>
-
-                    <div className="mt-6 space-y-3">
-                        <div className="rounded-2xl bg-white/90 p-4 ring-1 ring-purple-100">
-                            <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                                AI Diagnosis Suggestion
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-slate-800 leading-relaxed">
-                                {details.suggestion}
-                            </p>
-                        </div>
-
-                        <div className="rounded-2xl bg-white/90 p-4 ring-1 ring-purple-100">
-                            <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
-                                Recommended Specialization
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                {details.recommended_specializations.map((specialization: string) => (
-                                    <span
-                                        key={specialization}
-                                        className="rounded-full border border-purple-100 bg-white px-4 py-1 text-xs font-medium text-purple-900"
-                                    >
-                                        {specialization}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <AiRaport data={aiReportData} />
             ) : (
                 <div className="flex flex-col gap-4">
                     <div className="grid gap-1 text-sm pl-4 text-slate-600">
                         <div className="font-semibold text-slate-900">Reported Symptoms</div>
-                        <div>{reportDetails.symptoms}</div>
+                        <div>{reportDetails.reported_symptoms}</div>
                     </div>
-                    <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
-                        No AI report available for this appointment.
-                    </div>
+                    <NoAiRaport />
                 </div>
             )}
 
+            <DoctorRaport reportDetails={reportDetails} />
+
+        </div>
+    );
+};
+
+const NoAiRaport = () => {
+    return (
+        <div className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-500">
+            No AI report available for this appointment.
+        </div>
+    )
+}
+
+export const AiRaport = ({ data }: { data: AiReportData }) => {
+    const confidencePercent = Math.round((data.ai_confidence_score ?? 0) * 100);
+
+    return (
+        <div className="rounded-3xl border border-purple-100 bg-linear-to-br from-purple-50 to-white p-5">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-semibold text-purple-700">
+                        AI Preliminary Report
+                    </p>
+                    <p className="text-xs text-slate-500">
+                        Confidence: {confidencePercent}%
+                    </p>
+                </div>
+                <Sparkles className="h-5 w-5 text-purple-400" />
+            </div>
+
+            <dl className="mt-4 space-y-3 text-sm text-slate-700">
+                <div>
+                    <dt className="font-semibold text-slate-900">Reported Symptoms</dt>
+                    <dd>{data.reported_symptoms}</dd>
+                </div>
+                <div>
+                    <dt className="font-semibold text-slate-900">Duration</dt>
+                    <dd>{data.sickness_duration}</dd>
+                </div>
+                <div>
+                    <dt className="font-semibold text-slate-900">Summary</dt>
+                    <dd>{data.reported_summary}</dd>
+                </div>
+            </dl>
+
+            <div className="mt-6 space-y-3">
+                <div className="rounded-2xl bg-white/90 p-4 ring-1 ring-purple-100">
+                    <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
+                        AI Diagnosis Suggestion
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-800 leading-relaxed">
+                        {data.ai_diagnosis_suggestion}
+                    </p>
+                </div>
+
+                <div className="rounded-2xl bg-white/90 p-4 ring-1 ring-purple-100">
+                    <p className="text-xs font-bold uppercase tracking-wider text-purple-500">
+                        Recommended Specialization
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {data.ai_recommended_specializations.map((specialization: string) => (
+                            <span
+                                key={specialization}
+                                className="rounded-full border border-purple-100 bg-white px-4 py-1 text-xs font-medium text-purple-900"
+                            >
+                                {specialization}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+const DoctorRaport = ({ reportDetails }: { reportDetails: SummaryReportDetails }) => {
+    const { details, doctor, doctor_final_diagnosis } = reportDetails;
+
+    const hasDoctorDiagnosis = !!doctor_final_diagnosis;
+    const hasAiRating = details?.doctor_feedback_ai_rating !== null && details?.doctor_feedback_ai_rating !== undefined;
+    return (
+        <span>
             {hasDoctorDiagnosis && (
                 <div className="rounded-3xl border border-blue-100 bg-linear-to-br from-blue-50 to-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
@@ -143,7 +185,7 @@ const ReportSummary = ({ reportDetails }: { reportDetails: ReportDetails }) => {
                                 Doctor's Verification
                             </p>
                             <p className="text-xs text-slate-500">
-                                Reviewed by {doctor?.firstName} {doctor?.lastName}
+                                Reviewed by {doctor?.first_name} {doctor?.last_name}
                             </p>
                         </div>
                         <div className="rounded-full bg-blue-100 p-1.5">
@@ -179,7 +221,6 @@ const ReportSummary = ({ reportDetails }: { reportDetails: ReportDetails }) => {
                     </div>
                 </div>
             )}
-
-        </div>
-    );
-};
+        </span>
+    )
+}

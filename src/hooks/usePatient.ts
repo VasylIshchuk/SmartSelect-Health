@@ -3,22 +3,22 @@ import { supabase } from "@/api/supabase";
 
 export type Appointment = {
     id: string;
-    first_name: string;
-    last_name: string;
+    firstName: string;
+    lastName: string;
     specialization: string;
     date: string;
     time: string;
-    duration: string;
+    duration: number;
     status: string;
     location: string;
 };
 
 export type ReportItem = {
     id: string;
-    appointment_id: string;
+    appointmentId: string;
     date: string;
     time: string
-    symptoms: string;
+    reportedSymptoms: string;
     status: string;
 }
 
@@ -30,7 +30,6 @@ export const usePatient = (userId: string | undefined) => {
             const appointments = await fetchAppointments(userId, filter);
             return appointments;
         } catch (error) {
-            console.error("Error fetching patient appointments:", error);
             return [];
         }
     }, [userId]);
@@ -42,7 +41,6 @@ export const usePatient = (userId: string | undefined) => {
             const reports = await fetchReports(userId);
             return reports;
         } catch (error) {
-            console.error("Error fetching patient raports:", error);
             return [];
         }
     }, [userId]);
@@ -58,7 +56,11 @@ const fetchAppointments = async (userId: string, filter: 'all' | 'upcoming') => 
                 scheduled_time,
                 duration,
                 status,
-                office_location,
+                locations (
+                    name,
+                    address,
+                    city
+                ),
                 doctors (
                     specialization,
                     profiles ( first_name, last_name )
@@ -74,10 +76,8 @@ const fetchAppointments = async (userId: string, filter: 'all' | 'upcoming') => 
 
     const { data, error } = await query;
 
-    if (error || !data) {
-        console.error('Error fetching appointments:', error);
-        return [];
-    }
+    if (error) throw new Error(`Error fetching appointments: ${error.message}`);
+    if (!data) return [];
 
     return data.map(formatAppointment);
 };
@@ -89,10 +89,18 @@ const formatAppointment = (item: any): Appointment => {
         ? item.doctors.profiles[0]
         : item.doctors?.profiles;
 
+    const locationData = Array.isArray(item.locations)
+        ? item.locations[0]
+        : item.locations;
+
+    const locationName = locationData
+        ? `${locationData.name}, ${locationData.address}, ${locationData.city}`
+        : 'Unknown Location';
+
     return {
         id: item.id,
-        first_name: doctorProfile?.first_name || '',
-        last_name: doctorProfile?.last_name || '',
+        firstName: doctorProfile?.first_name || '',
+        lastName: doctorProfile?.last_name || '',
         specialization: item.doctors?.specialization || '',
 
         date: dateObj.toLocaleDateString('en-US', {
@@ -104,7 +112,7 @@ const formatAppointment = (item: any): Appointment => {
 
         duration: item.duration,
         status: item.status,
-        location: item.office_location,
+        location: locationName,
     };
 };
 
@@ -117,17 +125,17 @@ export const fetchReports = async (userId: string) => {
                 status,
                 appointments (
                     id,
-                    symptoms,
-                    scheduled_time
+                    reported_symptoms,
+                    scheduled_time,
+                    created_at
                 )
         `)
         .eq('patient_id', userId)
-        .order('scheduled_time', { referencedTable: 'appointments', ascending: false });
+        .order('created_at', { referencedTable: 'appointments', ascending: false });
 
-    if (error || !reports) {
-        console.error('Error fetching raports:', error);
-        return [];
-    }
+    if (error) throw new Error(`Error fetching raports: ${error.message}`);
+
+    if (!reports) return [];
 
     return reports.map(formatReport);
 };
@@ -141,8 +149,8 @@ const formatReport = (item: any): ReportItem => {
 
     return {
         id: item.id,
-        appointment_id: appointment?.id,
-        symptoms: appointment?.symptoms || 'No data on symptoms',
+        appointmentId: appointment?.id,
+        reportedSymptoms: appointment?.reported_symptoms || 'No data on symptoms',
         date: dateObj.toLocaleDateString('en-US', {
             year: 'numeric', month: 'long', day: 'numeric'
         }),
