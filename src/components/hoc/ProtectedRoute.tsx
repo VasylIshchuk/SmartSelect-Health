@@ -3,12 +3,11 @@
 import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import type { Role } from "@/types/account";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
-  allowedRole: Role;
+  allowedRole: "admin" | "doctor" | "patient";
 };
 
 const roleRoutes: Record<string, string> = {

@@ -1,37 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## BestChoose
 
-## Getting Started
+BestChoose is a Next.js (App Router) application using Supabase authentication and role-based dashboards (admin/doctor/patient).
 
-First, run the development server:
+### Tech stack
+
+- **Runtime**: Node.js (recommended **v20+**)
+- **Framework**: Next.js **16**
+- **UI**: React **19**, Tailwind CSS **v4**, Headless UI, lucide-react
+- **Forms**: react-hook-form + zod
+- **Charts**: victory
+- **Auth/DB**: Supabase (`@supabase/supabase-js`, `@supabase/ssr`)
+- **Notifications**: sonner
+
+### Requirements
+
+- **Node.js**: v20+ (v18 may work, but v20+ is recommended)
+- **Package manager**: yarn (recommended), npm, pnpm, or bun
+- **Supabase project**: you need a Supabase URL + keys (see env section)
+- **Optional**: Supabase CLI (only if you want to run `yarn generate`)
+
+### Environment variables
+
+Create a local env file (recommended: `.env.local`) with:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SERVICE_ROLE_KEY=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Security note (important)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`NEXT_PUBLIC_*` variables are exposed to the browser in Next.js. A **service role key must never be public**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project currently reads `NEXT_PUBLIC_SERVICE_ROLE_KEY` (see `src/api/supabaseAdmin.ts`). Treat it as **highly sensitive**:
 
-## Learn More
+- **Never commit it**
+- **Never use it in client-side code**
+- Prefer storing it as a **server-only** variable (not prefixed with `NEXT_PUBLIC_`) and only accessing it from server routes/actions
 
-To learn more about Next.js, take a look at the following resources:
+### How to run (step-by-step)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### 1) Install dependencies
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+yarn
+```
 
-## Deploy on Vercel
+#### 2) Configure env
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Create `.env.local`
+- Add the required Supabase env vars (above)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# BestChoose
+#### 3) Start the dev server
+
+```bash
+yarn dev
+```
+
+Then open `http://localhost:3000`.
+
+### Common scripts
+
+- **Dev**:
+
+```bash
+yarn dev
+```
+
+- **Lint**:
+
+```bash
+yarn lint
+```
+
+- **Production build**:
+
+```bash
+yarn build
+```
+
+- **Start production server** (after build):
+
+```bash
+yarn start
+```
+
+- **Generate Supabase types** (optional; requires Supabase CLI + project access):
+
+```bash
+yarn generate
+```
+
+### App structure (high level)
+
+- **Auth / route guards**: `src/components/hoc/`
+- **Dashboards**: `src/app/(dashboard)/` + `src/components/dashboards/`
+- **Supabase clients**: `src/api/supabase.ts`, `src/api/supabaseAdmin.ts`
+- **Hooks**: `src/hooks/`
+
+### Troubleshooting
+
+- **Blank page or auth redirects looping**: double-check your env vars and that Supabase URL/keys match the correct project.
+- **Charts show no data**: ensure your database has relevant rows (appointments/reports) and the app has access to read them.
+- **`yarn generate` fails**: install and authenticate Supabase CLI, and confirm the project id in the script matches your Supabase project.
