@@ -1,36 +1,35 @@
 ## BestChoose
 
-BestChoose is a Next.js (App Router) application using Supabase authentication and role-based dashboards (admin/doctor/patient).
+BestChoose to aplikacja webowa (Next.js App Router) dla platformy medycznej z uwierzytelnianiem w Supabase oraz panelami dla ról: **admin / doctor / patient**.
 
-### Key features
+### Opis aplikacji i funkcjonalności
 
-- **Authentication**: Supabase auth flows (login/register/reset-password)
-- **Role-based routing**: public/protected routes with redirects for admin/doctor/patient
-- **Admin dashboard**: doctor management (list/search/pagination) + statistics page with charts
-- **Doctor dashboard**: upcoming schedule + visit details
-- **Patient portal**: AI medical assistant interview entrypoint + upcoming appointments
-- **Consistent UX**: loading/redirect spinners and toast notifications
+- **Uwierzytelnianie**: logowanie/rejestracja/reset hasła oparte o Supabase Auth
+- **Autoryzacja i routing per rola**: public/protected routes + przekierowania do właściwego dashboardu
+- **Panel admina**: zarządzanie lekarzami (lista, wyszukiwanie z debounce, paginacja) + strona statystyk z wykresami
+- **Panel lekarza**: podgląd nadchodzących wizyt (harmonogram) i przejście do szczegółów wizyty
+- **Portal pacjenta**: szybki start wywiadu z AI + lista nadchodzących wizyt
+- **UX**: spójne loadery podczas sprawdzania sesji/przekierowań + powiadomienia toast
 
-### Tech stack
+### Wymagania (requirements)
 
-- **Runtime**: Node.js (recommended **v20+**)
-- **Framework**: Next.js **16**
-- **UI**: React **19**, Tailwind CSS **v4**, Headless UI, lucide-react
-- **Forms**: react-hook-form + zod
-- **Charts**: victory
+- **Node.js**: v20+ (v18 może działać, ale zalecane jest v20+)
+- **Package manager**: yarn (zalecany) / npm / pnpm / bun
+- **Supabase**: projekt Supabase + klucze (patrz sekcja env)
+- **Opcjonalnie**: Supabase CLI (jeśli chcesz generować typy przez `yarn generate`)
+
+### Stack technologiczny
+
+- **Framework**: Next.js 16 (App Router)
+- **UI**: React 19, Tailwind CSS v4, Headless UI, lucide-react
+- **Formy i walidacja**: react-hook-form + zod
+- **Wykresy**: victory
 - **Auth/DB**: Supabase (`@supabase/supabase-js`, `@supabase/ssr`)
-- **Notifications**: sonner
+- **Notyfikacje**: sonner
 
-### Requirements
+### Konfiguracja środowiska (env)
 
-- **Node.js**: v20+ (v18 may work, but v20+ is recommended)
-- **Package manager**: yarn (recommended), npm, pnpm, or bun
-- **Supabase project**: you need a Supabase URL + keys (see env section)
-- **Optional**: Supabase CLI (only if you want to run `yarn generate`)
-
-### Environment variables
-
-Create a local env file (recommended: `.env.local`) with:
+Utwórz plik `.env.local` (zalecane) i dodaj:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -38,38 +37,38 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_SERVICE_ROLE_KEY=
 ```
 
-#### Security note (important)
+#### Ważne (bezpieczeństwo)
 
-`NEXT_PUBLIC_*` variables are exposed to the browser in Next.js. A **service role key must never be public**.
+Zmienne `NEXT_PUBLIC_*` są wystawiane do przeglądarki w Next.js. **Service role key nie może być publiczny**.
 
-This project currently reads `NEXT_PUBLIC_SERVICE_ROLE_KEY` (see `src/api/supabaseAdmin.ts`). Treat it as **highly sensitive**:
+Ten projekt aktualnie czyta `NEXT_PUBLIC_SERVICE_ROLE_KEY` (zob. `src/api/supabaseAdmin.ts`). Traktuj go jako **super wrażliwy**:
 
-- **Never commit it**
-- **Never use it in client-side code**
-- Prefer storing it as a **server-only** variable (not prefixed with `NEXT_PUBLIC_`) and only accessing it from server routes/actions
+- **Nigdy go nie commituj**
+- **Nigdy nie używaj go w kodzie client-side**
+- Docelowo przenieś go do zmiennej **server-only** (bez prefixu `NEXT_PUBLIC_`) i używaj tylko w API/route handlers/actions po stronie serwera
 
-### How to run (step-by-step)
+### Jak uruchomić aplikację (krok po kroku)
 
-#### 1) Install dependencies
+#### 1) Instalacja zależności
 
 ```bash
 yarn
 ```
 
-#### 2) Configure env
+#### 2) Konfiguracja env
 
-- Create `.env.local`
-- Add the required Supabase env vars (above)
+- Utwórz `.env.local`
+- Uzupełnij wymagane zmienne Supabase (powyżej)
 
-#### 3) Start the dev server
+#### 3) Start w trybie developerskim
 
 ```bash
 yarn dev
 ```
 
-Then open `http://localhost:3000`.
+Otwórz `http://localhost:3000`.
 
-### Common scripts
+### Skrypty (npm/yarn scripts)
 
 - **Dev**:
 
@@ -83,33 +82,46 @@ yarn dev
 yarn lint
 ```
 
-- **Production build**:
+- **Build (produkcja)**:
 
 ```bash
 yarn build
 ```
 
-- **Start production server** (after build):
+- **Start (produkcja)** (po buildzie):
 
 ```bash
 yarn start
 ```
 
-- **Generate Supabase types** (optional; requires Supabase CLI + project access):
+- **Generowanie typów Supabase** (opcjonalnie; wymaga Supabase CLI + dostępu do projektu):
 
 ```bash
 yarn generate
 ```
 
-### App structure (high level)
+### Struktura projektu
 
-- **Auth / route guards**: `src/components/hoc/`
-- **Dashboards**: `src/app/(dashboard)/` + `src/components/dashboards/`
-- **Supabase clients**: `src/api/supabase.ts`, `src/api/supabaseAdmin.ts`
-- **Hooks**: `src/hooks/`
+Najważniejsze katalogi i pliki:
+
+- **Routing / widoki (App Router)**: `src/app/`
+  - dashboardy: `src/app/(dashboard)/`
+- **Komponenty**: `src/components/`
+  - dashboardy: `src/components/dashboards/`
+  - route guards / sesja: `src/components/hoc/`
+  - elementy współdzielone: `src/components/shared/`
+- **Hooki**: `src/hooks/`
+- **Supabase clienty**: `src/api/supabase.ts`, `src/api/supabaseAdmin.ts`
+- **Dane statyczne**: `src/data/`
+- **Typy**: `src/types/`
+
+### Jak działa logika dostępu (w skrócie)
+
+- **Public routes** (np. login/register): przekierowują zalogowanych użytkowników do odpowiedniego dashboardu.
+- **Protected routes** (dashboardy): wymagają sesji i roli; w trakcie sprawdzania sesji pokazują loader, aby uniknąć “flashowania” nieautoryzowanych stron.
 
 ### Troubleshooting
 
-- **Blank page or auth redirects looping**: double-check your env vars and that Supabase URL/keys match the correct project.
-- **Charts show no data**: ensure your database has relevant rows (appointments/reports) and the app has access to read them.
-- **`yarn generate` fails**: install and authenticate Supabase CLI, and confirm the project id in the script matches your Supabase project.
+- **Pusta strona lub pętla przekierowań**: sprawdź env i czy URL/klucze Supabase są z właściwego projektu.
+- **Wykresy nic nie pokazują**: upewnij się, że w bazie są dane (np. appointments/reports) i aplikacja ma uprawnienia do odczytu.
+- **`yarn generate` nie działa**: zainstaluj i zaloguj Supabase CLI, i sprawdź czy `project-id` w skrypcie pasuje do Twojego projektu.
