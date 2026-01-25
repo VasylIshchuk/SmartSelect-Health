@@ -1,9 +1,9 @@
 import { AvailabilitySlot, Doctor, FormDataState, Location } from "@/types/book_appointment";
 import { useEffect, useState } from "react";
-import { useBookAppointment } from "./useBookAppointment";
+import { useAppointmentApi } from "./useAppointmentApi";
 
 export function useAppointmentData(formData: FormDataState, locationQuery: string, userId?: string) {
-    const { getUniqueSpecializations, getLocations, getDoctors, getAvailability, bookAppointment } = useBookAppointment(userId);
+    const { getUniqueSpecializations, getLocations, getDoctors, getAvailability, bookAppointment } = useAppointmentApi(userId);
 
     const [specializations, setSpecializations] = useState<string[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);

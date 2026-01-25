@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { supabaseAdmin, isAdminApiAvailable } from "@/api/supabaseAdmin";
 import { supabase } from "@/api/supabase";
 import { toast } from "sonner";
+
 export interface Doctor {
   id: string;
   first_name: string;
@@ -331,15 +332,24 @@ export const useAdmin = () => {
     try {
       setIsLoading(true);
 
-      let query = supabaseAdmin.from("appointments").select("*");
+      let query = supabaseAdmin.from("appointments").select(`
+          *,
+          availability!inner (
+            start_time,
+            end_time,
+            duration,
+            location_id
+          )
+        `);
 
       if (startDate && endDate) {
         query = query
-          .gte("scheduled_time", startDate.toISOString())
-          .lte("scheduled_time", endDate.toISOString());
+          .gte("availability.start_time", startDate.toISOString())
+          .lte("availability.start_time", endDate.toISOString());
       }
 
-      const { data, error } = await query.order("scheduled_time", {
+      const { data, error } = await query.order("start_time", {
+        foreignTable: "availability",
         ascending: true,
       });
 

@@ -4,7 +4,7 @@ import { AiReportData } from "@/types/report";
 import { useCallback } from "react";
 
 
-export const useBookAppointment = (userId: string | undefined) => {
+export const useAppointmentApi = (userId: string | undefined) => {
     const getUniqueSpecializations = useCallback(async (): Promise<string[]> => {
         try {
             return await fetchSpecializations()
@@ -198,7 +198,7 @@ export const submitAppointmentTransaction = async (
 
     await insertAppointment(userId, formData, savedReportId);
 
-    await markSlotAsBooked(formData.doctorId, formData.selectedTimeSlot!);
+    await markSlotAsBooked(formData.doctorId, formData.selectedSlotTime!);
 };
 
 
@@ -242,43 +242,21 @@ const insertReport = async (userId: string, report: AiReportData): Promise<strin
 
 
 const insertAppointment = async (userId: string, formData: FormDataState, reportId: string | null) => {
-    const duration = await calculateSlotDuration(formData.doctorId, formData.selectedTimeSlot!);
 
     const { error } = await supabase
         .from('appointments')
         .insert({
             patient_id: userId,
             doctor_id: formData.doctorId,
-            location_id: formData.locationId,
+            availability_id: formData.selectedSlotId,
             report_id: reportId,
             visit_type: formData.visitType,
             reported_symptoms: formData.reportedSymptoms,
-            scheduled_time: formData.selectedTimeSlot,
             status: 'Pending',
-            duration: duration
         });
 
     if (error) throw new Error(`Failed to save the appointment data: ${error.message}`);
 };
-
-const calculateSlotDuration = async (doctorId: string, startTime: string): Promise<number> => {
-    const { data, error } = await supabase
-        .from('availability')
-        .select('start_time, end_time')
-        .eq('doctor_id', doctorId)
-        .eq('start_time', startTime)
-        .single();
-
-    if (error || !data) throw new Error(`Error fetching the slot: ${error.message}`);
-
-    const start = new Date(data.start_time).getTime();
-    const end = new Date(data.end_time).getTime();
-
-    const durationInMinutes = (end - start) / (1000 * 60);
-
-    return durationInMinutes;
-};
-
 
 
 const markSlotAsBooked = async (doctorId: string, timeSlot: string) => {

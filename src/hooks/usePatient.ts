@@ -53,13 +53,15 @@ const fetchAppointments = async (userId: string, filter: 'all' | 'upcoming') => 
         .from('appointments')
         .select(`
                 id,
-                scheduled_time,
-                duration,
                 status,
-                locations (
-                    name,
-                    address,
-                    city
+                availability!inner (
+                    start_time,
+                    duration,
+                    locations (
+                        name,
+                        address,
+                        city
+                    )
                 ),
                 doctors (
                     specialization,
@@ -67,12 +69,13 @@ const fetchAppointments = async (userId: string, filter: 'all' | 'upcoming') => 
                 )
         `)
         .eq('patient_id', userId)
-        .order('scheduled_time', { ascending: true });
 
     if (filter === 'upcoming') {
         const now = new Date().toISOString();
-        query = query.gt('scheduled_time', now);
+        query = query.gt('availability.start_time', now);
     }
+
+    query = query.order('start_time', { referencedTable: 'availability', ascending: true });
 
     const { data, error } = await query;
 
@@ -83,15 +86,19 @@ const fetchAppointments = async (userId: string, filter: 'all' | 'upcoming') => 
 };
 
 const formatAppointment = (item: any): Appointment => {
-    const dateObj = new Date(item.scheduled_time);
+    const availability = Array.isArray(item.availability) 
+        ? item.availability[0] 
+        : item.availability;
+
+    const dateObj = new Date(availability.start_time);
 
     const doctorProfile = Array.isArray(item.doctors?.profiles)
         ? item.doctors.profiles[0]
         : item.doctors?.profiles;
 
-    const locationData = Array.isArray(item.locations)
-        ? item.locations[0]
-        : item.locations;
+    const locationData = Array.isArray(availability.locations)
+        ? availability.locations[0]
+        : availability.locations;
 
     const locationName = locationData
         ? `${locationData.name}, ${locationData.address}, ${locationData.city}`
@@ -110,7 +117,7 @@ const formatAppointment = (item: any): Appointment => {
             hour: '2-digit', minute: '2-digit', hour12: false
         }),
 
-        duration: item.duration,
+        duration: availability.duration,
         status: item.status,
         location: locationName,
     };
@@ -126,8 +133,10 @@ export const fetchReports = async (userId: string) => {
                 appointments (
                     id,
                     reported_symptoms,
-                    scheduled_time,
-                    created_at
+                    created_at,
+                    availability (
+                        start_time
+                    )
                 )
         `)
         .eq('patient_id', userId)
@@ -144,8 +153,13 @@ const formatReport = (item: any): ReportItem => {
     const appointment = Array.isArray(item.appointments)
         ? item.appointments[0]
         : item.appointments;
+    
+    const availability = Array.isArray(appointment?.availability)
+        ? appointment.availability[0]
+        : appointment?.availability;
 
-    const dateObj = new Date(appointment?.scheduled_time);
+    const dateStr = availability?.start_time 
+    const dateObj = new Date(dateStr);
 
     return {
         id: item.id,

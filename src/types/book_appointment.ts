@@ -9,7 +9,8 @@ export type FormDataState = {
     locationId: string;
     doctorId: string;
     selectedDate: string;
-    selectedTimeSlot: string | null;
+    selectedSlotId: string | null;
+    selectedSlotTime: string | null;
 };
 
 export type Location = {
@@ -29,6 +30,7 @@ export type Doctor = {
 };
 
 export type AvailabilitySlot = {
+    id: string;
     doctor_id: string;
     start_time: string;
     is_booked: boolean;

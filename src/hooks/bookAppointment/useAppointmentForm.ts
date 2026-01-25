@@ -6,7 +6,7 @@ export function useAppointmentForm(user: any) {
     const [formData, setFormData] = useState<FormDataState>({
         firstName: '', lastName: '', pesel: '', birthDate: '',
         reportedSymptoms: '', visitType: 'Consultation', specialization: '',
-        locationId: '', doctorId: '', selectedDate: '', selectedTimeSlot: null,
+        locationId: '', doctorId: '', selectedDate: '', selectedSlotId: null, selectedSlotTime: null,
     });
     const [aiReport, setAiReport] = useState<AiReportData | null>(null);
     const [locationQuery, setLocationQuery] = useState('');
@@ -17,7 +17,17 @@ export function useAppointmentForm(user: any) {
 
 
     const isFormComplete = useMemo(() => {
-        return Object.values(formData).every(val => val !== '' && val !== null);
+        return (
+            formData.firstName.trim() !== '' &&
+            formData.lastName.trim() !== '' &&
+            formData.pesel.trim() !== '' &&
+            formData.birthDate.trim() !== '' &&
+            formData.reportedSymptoms.trim() !== '' &&
+            formData.doctorId !== '' &&
+            formData.selectedDate !== '' &&
+            formData.selectedSlotId !== null && 
+            formData.selectedSlotId !== ''
+        );
     }, [formData]);
 
 

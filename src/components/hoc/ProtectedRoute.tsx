@@ -3,8 +3,8 @@
 import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import type { Role } from "@/types/account";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { Role } from "@/types/account";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;

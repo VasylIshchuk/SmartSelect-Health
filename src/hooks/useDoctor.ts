@@ -103,12 +103,12 @@ const getTodayRangeISO = () => {
 const fetchTodayAppointmentsCount = async (doctorId: string) => {
     const { todayStartIso, todayEndIso } = getTodayRangeISO();
 
-    const { count, error } = await supabase
+   const { count, error } = await supabase
         .from("appointments")
-        .select("*", { count: "exact", head: true })
+        .select("availability!inner(start_time)", { count: "exact", head: true }) 
         .eq("doctor_id", doctorId)
-        .gte("scheduled_time", todayStartIso)
-        .lte("scheduled_time", todayEndIso);
+        .gte("availability.start_time", todayStartIso) 
+        .lte("availability.start_time", todayEndIso);
 
     if (error) throw new Error(`Error today appointments: ${error.message}`);
 
@@ -148,17 +148,19 @@ const fetchTodayAppointments = async (
         .from("appointments")
         .select(`
                 id,
-                scheduled_time,
-                duration,
+                availability!inner (
+                    start_time,
+                    duration
+                ),
                 visit_type,
                 reported_symptoms, 
                 profiles!patient_id (first_name, last_name),
                 reports (ai_diagnosis_suggestion)
         `)
         .eq("doctor_id", doctorId)
-        .gte("scheduled_time", todayStartIso)
-        .lte("scheduled_time", todayEndIso)
-        .order("scheduled_time", { ascending: true });
+        .gte("availability.start_time", todayStartIso)
+        .lte("availability.start_time", todayEndIso)
+        .order("start_time", { foreignTable: "availability", ascending: true });
 
     if (error) throw new Error(`Error getting today appointments: ${error.message}`);
 
@@ -171,15 +173,18 @@ const formatTodayAppointment = (item: any): DoctorAppointment => {
     const patient = Array.isArray(item.profiles)
         ? item.profiles[0]
         : item.profiles;
+    
+    const startTime = item.availability?.start_time;
+    const duration = item.availability?.duration;
 
-    const dateObj = new Date(item.scheduled_time);
+    const dateObj = new Date(startTime);
 
     return {
         id: item.id,
         time: dateObj.toLocaleTimeString('en-US', {
             hour: '2-digit', minute: '2-digit', hour12: false
         }),
-        duration: item.duration,
+        duration: duration,
         type: item.visit_type,
         patientName: `${patient.first_name} ${patient.last_name}`,
         reportedSymptoms: item.reported_symptoms,

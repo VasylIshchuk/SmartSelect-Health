@@ -225,7 +225,7 @@ const MedicalInfoSection = ({ formData, updateField, specializations, aiReport }
                         {aiReport?.reported_summary && <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">AI Auto-filled</span>}
                     </div>
                     <textarea
-                        name="symptoms"
+                        name="reportedSymptoms"
                         rows={3}
                         value={formData.reportedSymptoms}
                         onChange={handleInputChange}
@@ -321,11 +321,15 @@ const LocationAndDoctorSection = ({
     const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
 
     const handleLocationSelect = (loc: Location) => {
-        setFormData((prev: FormDataState) => ({ ...prev, locationId: loc.id }));
+        setFormData((prev: FormDataState) => ({
+            ...prev,
+            locationId: loc.id,
+            doctorId: '',
+            selectedSlotId: null,
+            selectedSlotTime: null
+        }));
         setLocationQuery(loc.city + ", " + loc.name + ", " + loc.address);
         setIsLocationDropdownOpen(false);
-
-        setFormData((prev: FormDataState) => ({ ...prev, doctorId: '', selectedTimeSlot: null }));
     };
 
     return (
@@ -377,7 +381,12 @@ const LocationAndDoctorSection = ({
                         {doctors.length > 0 ? doctors.map((doctor: Doctor) => (
                             <div
                                 key={doctor.id}
-                                onClick={() => setFormData((prev: FormDataState) => ({ ...prev, doctorId: doctor.id, selectedTimeSlot: null }))}
+                                onClick={() => setFormData((prev: FormDataState) => ({
+                                    ...prev,
+                                    doctorId: doctor.id,
+                                    selectedSlotId: null, 
+                                    selectedSlotTime: null
+                                }))}
                                 className={`cursor-pointer rounded-xl border p-3 flex items-center gap-3 transition ${formData.doctorId === doctor.id
                                     ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-200'
                                     : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
@@ -417,7 +426,8 @@ const TimeSlotSection = ({ formData, setFormData, slots }: TimeSlotProps) => {
         setFormData(prev => ({
             ...prev,
             selectedDate: date,
-            selectedTimeSlot: null
+            selectedSlotId: null,
+            selectedSlotTime: null
         }));
     };
 
@@ -442,12 +452,16 @@ const TimeSlotSection = ({ formData, setFormData, slots }: TimeSlotProps) => {
             <div className="grid grid-cols-2 gap-2">
                 {slots.length > 0 ? slots.map((slot: AvailabilitySlot, i: number) => {
                     const time = new Date(slot.start_time).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })
-                    const isSelected = formData.selectedTimeSlot === slot.start_time;
+                    const isSelected = formData.selectedSlotId === slot.id;
 
                     return (
                         <button
                             key={i}
-                            onClick={() => setFormData(p => ({ ...p, selectedTimeSlot: slot.start_time }))}
+                            onClick={() => setFormData(p => ({
+                                ...p,
+                                selectedSlotId: slot.id,
+                                selectedSlotTime: slot.start_time
+                            }))}
                             className={`py-2 px-3 rounded-lg text-xs font-medium transition ${isSelected
                                 ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                                 : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-100'
@@ -475,7 +489,7 @@ const BookingSummary = ({ formData, isFormComplete, onSubmit }: any) => (
             <SummaryRow label="Doctor" value={formData.doctorId ? 'Selected' : '-'} />
             <SummaryRow
                 label="Date"
-                value={formData.selectedTimeSlot ? new Date(formData.selectedTimeSlot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                value={formData.selectedSlotTime ? new Date(formData.selectedSlotTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
             />
         </div>
 
