@@ -16,8 +16,7 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Doctor, useAdmin } from "@/hooks/useAdmin";
-import { useAuth } from "@/hooks/useAuth";
-import { useSession } from "@/components/hoc/AuthSessionProvider";
+import DashboardHeader from "@/components/dashboards/DashboardHeader";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -28,9 +27,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const { session } = useSession();
 
-  const { logOut, isLoading: isLoggingOut } = useAuth();
   const { getDoctors, deleteDoctor, addDoctor, isLoading } = useAdmin();
 
   useEffect(() => {
@@ -58,7 +55,6 @@ export default function AdminDashboard() {
     fetchDoctors();
   }, [getDoctors, debouncedSearchQuery]);
 
-  // Pagination logic
   const paginatedDoctors = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -81,7 +77,7 @@ export default function AdminDashboard() {
       total: allDoctors.length,
       withEmail: allDoctors.filter((d) => d.email).length,
       recent: allDoctors.filter(
-        (d) => d.work_start_date && new Date(d.work_start_date) > thirtyDaysAgo
+        (d) => d.work_start_date && new Date(d.work_start_date) > thirtyDaysAgo,
       ).length,
     };
   }, [allDoctors]);
@@ -90,34 +86,8 @@ export default function AdminDashboard() {
     <div className="h-screen overflow-hidden from-slate-50 via-white to-slate-50">
       <section className="flex h-full flex-col gap-6 py-6 lg:py-8">
         {/* Header */}
-        <header className="flex shrink-0 flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25">
-              <Users className="h-7 w-7" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">
-                Admin Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                {session?.user?.user_metadata?.first_name}{" "}
-                {session?.user?.user_metadata?.last_name}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              logOut();
-              router.push("/login");
-            }}
-            disabled={isLoggingOut}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <LogOut className="h-4 w-4" />
-            {isLoggingOut ? "Logging out..." : "Log out"}
-          </button>
-        </header>
+
+        <DashboardHeader />
 
         {/* Stats Cards */}
         <div className="grid shrink-0 gap-4 sm:grid-cols-3">
@@ -271,7 +241,7 @@ export default function AdminDashboard() {
                 Showing{" "}
                 {Math.min(
                   (currentPage - 1) * ITEMS_PER_PAGE + 1,
-                  doctors.length
+                  doctors.length,
                 )}{" "}
                 to {Math.min(currentPage * ITEMS_PER_PAGE, doctors.length)} of{" "}
                 {doctors.length} doctors
