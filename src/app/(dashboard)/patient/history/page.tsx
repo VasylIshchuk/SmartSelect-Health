@@ -2,7 +2,9 @@
 
 import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { ReportItem, usePatient } from "@/hooks/usePatient";
+import { Spinner } from "@/components/shared/Spinner";
+import { useReport } from "@/hooks/useReport";
+import { ReportHistoryItem } from "@/types/report";
 import { Calendar, CheckCircle2, File } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,19 +16,37 @@ export default function HistoryPage() {
 
   const { session } = useSession();
 
-  const [reports, setReports] = useState<ReportItem[]>([]);
-  const { getReports } = usePatient(session?.user?.id);
+  const [reports, setReports] = useState<ReportHistoryItem[] | null>(null);
+  const { getReportsHistory, isLoading } = useReport(session?.user?.id);
   useEffect(() => {
     let isMounted = true;
 
     const loadData = async () => {
-      const data = await getReports();
+      const data = await getReportsHistory();
       if (isMounted) setReports(data);
     };
 
     loadData();
     return () => { isMounted = false; };
-  }, [getReports]);
+  }, [getReportsHistory]);
+
+
+  if (isLoading || reports === null) {
+    return (
+      <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
+        No consultation history.
+      </div>
+    );
+  }
+
 
   return (
     <section className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -37,22 +57,16 @@ export default function HistoryPage() {
       />
 
       <div className="flex flex-col gap-3">
-        {reports.length > 0 ? (
-          reports.map((report) => (
-            <HistoryCard key={report.id} report={report} />
-          ))
-        ) : (
-          <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
-            No consultation history
-          </div>
-        )}
+        {reports.map((report) => (
+          <HistoryCard key={report.id} report={report} />
+        ))}
       </div>
     </section>
   );
 }
 
 
-const HistoryCard = ({ report }: { report: ReportItem }) => {
+const HistoryCard = ({ report }: { report: ReportHistoryItem }) => {
 
   return (
     <Link

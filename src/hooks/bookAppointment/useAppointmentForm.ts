@@ -1,8 +1,9 @@
 import { FormDataState } from "@/types/book_appointment";
 import { AiReportData } from "@/types/report";
 import { useEffect, useMemo, useState } from "react";
+import { UserProfile } from "../useUser";
 
-export function useAppointmentForm(user: any) {
+export function useAppointmentForm(user: UserProfile | null) {
     const [formData, setFormData] = useState<FormDataState>({
         firstName: '', lastName: '', pesel: '', birthDate: '',
         reportedSymptoms: '', visitType: 'Consultation', specialization: '',
@@ -46,14 +47,13 @@ export function useAppointmentForm(user: any) {
     }, []);
 
     useEffect(() => {
-        if (user?.user_metadata) {
-            const { first_name, last_name, pesel, date_of_birth } = user.user_metadata;
+        if (user) {
             setFormData(prev => ({
                 ...prev,
-                firstName: first_name || '',
-                lastName: last_name || '',
-                pesel: pesel || '',
-                birthDate: date_of_birth || '',
+                firstName: user.first_name || '',
+                lastName: user.last_name || '',
+                pesel: user.pesel || '',
+                birthDate: user.date_of_birth || '',
             }));
         }
     }, [user]);

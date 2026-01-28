@@ -1,10 +1,10 @@
 "use client"
 
-import { AppointmentList } from "@/components/shared/AppointmentList";
+import { PatientAppointmentList } from "@/components/dashboards/PatientAppointmentList";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useRouter } from "next/navigation";
 
-export default function VisitsPage() {
+export default function AppointmentsPage() {
   const router = useRouter();
 
   return (
@@ -15,7 +15,7 @@ export default function VisitsPage() {
         onBack={() => router.back()}
       />
       <div className="mt-4">
-        <AppointmentList appointmentsFilter={'all'} />
+        <PatientAppointmentList filter={'all'} />
       </div>
     </section>
   );

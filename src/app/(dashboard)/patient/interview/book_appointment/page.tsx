@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Calendar, MapPin, User, Stethoscope,
@@ -9,11 +9,15 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/hoc/AuthSessionProvider';
 import { AiReportData } from '@/types/report';
-import { AvailabilitySlot, Doctor, FormDataState, Location } from '@/types/book_appointment';
+import { FormDataState } from '@/types/book_appointment';
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useChatLogic } from '@/hooks/useChatLogic';
 import { useAppointmentForm } from '@/hooks/bookAppointment/useAppointmentForm';
 import { useAppointmentData } from '@/hooks/bookAppointment/useAppointmentData';
+import { useUser } from '@/hooks/useUser';
+import { AvailabilityDB } from '@/hooks/useAvailability';
+import { Doctor } from '@/hooks/useDoctor';
+import { LocationAutocomplete } from '@/components/dashboards/LocationAutocomplete';
 
 
 const VISIT_TYPES = ["Sick visit", "Follow-up", "Consultation", "Appointment", "Referral"];
@@ -21,17 +25,19 @@ const VISIT_TYPES = ["Sick visit", "Follow-up", "Consultation", "Appointment", "
 
 export default function BookAppointmentPage() {
     const router = useRouter();
+
     const { session } = useSession();
+    const userId = session?.user?.id
+    const { user } = useUser(userId);
 
     const {
         formData, setFormData,
         updateField, isFormComplete, aiReport,
-        locationQuery, setLocationQuery,
-    } = useAppointmentForm(session?.user);
+    } = useAppointmentForm(user);
 
     const {
-        specializations, locations, doctors, slots, bookAppointment
-    } = useAppointmentData(formData, locationQuery, session?.user?.id);
+        specializations, doctors, slots, bookAppointment
+    } = useAppointmentData(formData, userId);
 
     const { clearHistory } = useChatLogic();
 
@@ -78,10 +84,7 @@ export default function BookAppointmentPage() {
                         <LocationAndDoctorSection
                             formData={formData}
                             setFormData={setFormData}
-                            locations={locations}
                             doctors={doctors}
-                            locationQuery={locationQuery}
-                            setLocationQuery={setLocationQuery}
                         />
                     </div>
                     <div className="space-y-6">
@@ -307,31 +310,12 @@ const SelectField = ({ name, label, value, handleInputChange, options }: any) =>
 interface LocationSectionProps {
     formData: FormDataState;
     setFormData: any;
-    locationQuery: string;
-    setLocationQuery: (q: string) => void;
-    locations: Location[];
     doctors: Doctor[];
 }
 
 const LocationAndDoctorSection = ({
-    formData, setFormData,
-    locationQuery, setLocationQuery,
-    locations, doctors,
+    formData, setFormData, doctors,
 }: LocationSectionProps) => {
-    const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
-
-    const handleLocationSelect = (loc: Location) => {
-        setFormData((prev: FormDataState) => ({
-            ...prev,
-            locationId: loc.id,
-            doctorId: '',
-            selectedSlotId: null,
-            selectedSlotTime: null
-        }));
-        setLocationQuery(loc.city + ", " + loc.name + ", " + loc.address);
-        setIsLocationDropdownOpen(false);
-    };
-
     return (
         <section className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative">
             <FormGroupHeader
@@ -342,36 +326,24 @@ const LocationAndDoctorSection = ({
             <div className="space-y-4">
                 <div className="relative">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Location</label>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Start typing a city or name…"
-                            value={locationQuery}
-                            onChange={(e) => {
-                                setLocationQuery(e.target.value);
-                                setIsLocationDropdownOpen(true);
-                                setFormData((prev: FormDataState) => ({ ...prev, locationId: '' }));
-                            }}
-                            onFocus={() => setIsLocationDropdownOpen(true)}
-                            className="w-full rounded-xl border border-slate-200 bg-white p-2.5 pl-9 text-slate-900 focus:border-blue-500 outline-none"
-                        />
-                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    </div>
-
-                    {isLocationDropdownOpen && locations.length > 0 && (
-                        <div className="absolute z-20 mt-1 w-full rounded-xl border border-slate-100 bg-white shadow-lg p-1 max-h-48 overflow-y-auto">
-                            {locations.map((location: Location) => (
-                                <button
-                                    key={location.id}
-                                    onClick={() => handleLocationSelect(location)}
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded-lg transition group"
-                                >
-                                    <div className="font-medium text-slate-700 group-hover:text-blue-700">{location.name}</div>
-                                    <div className="text-xs text-slate-400">{location.city}, {location.address}</div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                    <LocationAutocomplete
+                        selectedLocationId={formData.locationId}
+                        onSelect={(location) => {
+                            setFormData((prev: FormDataState) => ({
+                                ...prev,
+                                locationId: location.id,
+                                doctorId: '',
+                                selectedSlotId: null,
+                                selectedSlotTime: null
+                            }));
+                        }}
+                        onClear={() => {
+                            setFormData((prev: FormDataState) => ({
+                                ...prev,
+                                locationId: '',
+                            }));
+                        }}
+                    />
                 </div>
 
 
@@ -384,7 +356,7 @@ const LocationAndDoctorSection = ({
                                 onClick={() => setFormData((prev: FormDataState) => ({
                                     ...prev,
                                     doctorId: doctor.id,
-                                    selectedSlotId: null, 
+                                    selectedSlotId: null,
                                     selectedSlotTime: null
                                 }))}
                                 className={`cursor-pointer rounded-xl border p-3 flex items-center gap-3 transition ${formData.doctorId === doctor.id
@@ -417,7 +389,7 @@ const LocationAndDoctorSection = ({
 interface TimeSlotProps {
     formData: FormDataState;
     setFormData: React.Dispatch<React.SetStateAction<FormDataState>>;
-    slots: AvailabilitySlot[];
+    slots: AvailabilityDB[];
 }
 
 const TimeSlotSection = ({ formData, setFormData, slots }: TimeSlotProps) => {
@@ -450,7 +422,7 @@ const TimeSlotSection = ({ formData, setFormData, slots }: TimeSlotProps) => {
 
             <label className="block text-xs font-medium text-slate-500 mb-2">Available times</label>
             <div className="grid grid-cols-2 gap-2">
-                {slots.length > 0 ? slots.map((slot: AvailabilitySlot, i: number) => {
+                {slots.length > 0 ? slots.map((slot: AvailabilityDB, i: number) => {
                     const time = new Date(slot.start_time).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })
                     const isSelected = formData.selectedSlotId === slot.id;
 

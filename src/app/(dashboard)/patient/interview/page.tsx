@@ -4,7 +4,7 @@ import { AiRaport } from "@/components/shared/ReportDetailsCard";
 import { patientInterview } from "@/data/dashboard-data";
 import { ArrowLeft, Bot, CalendarCheck, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatLogic } from "@/hooks/useChatLogic";
 import { ChatMessage } from "@/types/chat";
 import { ChatInputArea } from "@/components/dashboards/ChatInputArea";
@@ -39,6 +39,16 @@ export default function InterviewPage() {
 
   const [viewedImage, setViewedImage] = useState<string | null>(null);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isResponding])
+
   return (
     <div className="flex-1 w-full">
       <section className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100 h-[650px] relative">
@@ -58,6 +68,8 @@ export default function InterviewPage() {
               AI is analyzing the response...
             </div>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         <ChatInputArea

@@ -1,13 +1,19 @@
 import { Heart, LogOut } from "lucide-react";
 import { useSession } from "../hoc/AuthSessionProvider";
 import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@/hooks/useUser";
 
 export default function DashboardHeader() {
   const { session } = useSession();
+  const userId = session?.user?.id
+
+  const { user } = useUser(userId);
+
   const { logOut } = useAuth();
   const handleLogout = async () => {
     await logOut();
   };
+
   return (
     <header className="flex flex-row items-center justify-between w-full">
       <div>
@@ -19,8 +25,8 @@ export default function DashboardHeader() {
         </div>
 
         <h2 className="text-3xl font-medium text-slate-900">
-          Hi, {session?.user?.user_metadata?.first_name}{" "}
-          {session?.user?.user_metadata?.last_name}!
+          Hi, {user?.first_name}{" "}
+          {user?.last_name}!
         </h2>
         <p className=" text-slate-500">Medical System</p>
       </div>

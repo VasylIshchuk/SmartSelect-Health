@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.554.0",
     "next": "16.0.4",
     "react": "19.2.0",

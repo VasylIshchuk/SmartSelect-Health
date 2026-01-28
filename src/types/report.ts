@@ -32,3 +32,12 @@ export type SummaryReportDetails = {
     } | null;
 };
 
+
+export type ReportHistoryItem = {
+    id: string;
+    appointmentId: string;
+    date: string;
+    time: string
+    reportedSymptoms: string;
+    status: string;
+}

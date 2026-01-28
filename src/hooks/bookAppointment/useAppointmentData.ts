@@ -1,14 +1,17 @@
-import { AvailabilitySlot, Doctor, FormDataState, Location } from "@/types/book_appointment";
+import { FormDataState } from "@/types/book_appointment";
 import { useEffect, useState } from "react";
-import { useAppointmentApi } from "./useAppointmentApi";
+import { Doctor, useDoctor } from "../useDoctor";
+import { AvailabilityDB, useAvailability } from "../useAvailability";
+import { useAppointment } from "../useAppointments";
 
-export function useAppointmentData(formData: FormDataState, locationQuery: string, userId?: string) {
-    const { getUniqueSpecializations, getLocations, getDoctors, getAvailability, bookAppointment } = useAppointmentApi(userId);
+export function useAppointmentData(formData: FormDataState, userId?: string) {
+    const { getDoctors, getUniqueSpecializations } = useDoctor(userId);
+    const { getSlotsByDoctorIdForDate } = useAvailability(userId);
+    const { bookAppointment } = useAppointment(userId)
 
     const [specializations, setSpecializations] = useState<string[]>([]);
-    const [locations, setLocations] = useState<Location[]>([]);
     const [doctors, setDoctors] = useState<Doctor[]>([]);
-    const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+    const [slots, setSlots] = useState<AvailabilityDB[]>([]);
 
 
     useEffect(() => {
@@ -22,26 +25,6 @@ export function useAppointmentData(formData: FormDataState, locationQuery: strin
         loadData();
         return () => { isMounted = false; };
     }, [getUniqueSpecializations]);
-
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const isLocationSelected = !!formData.locationId;
-
-        if (isLocationSelected) {
-            setLocations([]);
-            return;
-        }
-
-        const loadData = async () => {
-            const data = await getLocations(formData?.specialization, locationQuery);
-            if (isMounted) setLocations(data);
-        };
-
-        loadData();
-        return () => { isMounted = false; };
-    }, [getLocations, locationQuery, formData.specialization, formData.locationId]);
 
 
     useEffect(() => {
@@ -65,15 +48,19 @@ export function useAppointmentData(formData: FormDataState, locationQuery: strin
 
         const loadData = async () => {
             if (formData.selectedDate) {
-                const data = await getAvailability(formData.doctorId, formData.selectedDate);
+                const data = await getSlotsByDoctorIdForDate(
+                    formData.doctorId,
+                    formData.selectedDate,
+                    formData.locationId
+                );
                 if (isMounted) setSlots(data);
             }
         };
 
         loadData();
         return () => { isMounted = false; };
-    }, [getAvailability, formData.doctorId, formData.selectedDate]);
+    }, [getSlotsByDoctorIdForDate, formData.doctorId, formData.selectedDate, formData.locationId]);
 
-    return { specializations, locations, doctors, slots, bookAppointment };
+    return { specializations, doctors, slots, bookAppointment };
 }
 

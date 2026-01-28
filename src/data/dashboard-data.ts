@@ -1,4 +1,20 @@
-export const patientPortalData = {
+export interface QuickActionItem {
+  label: string;
+  description: string;
+  targetView: string;
+}
+
+export interface PortalData {
+  quickActions: QuickActionItem[];
+  aiCard?: { 
+    label: string;
+    title: string;
+    description: string;
+    buttonText: string;
+  };
+}
+
+export const patientPortalData: PortalData = {
   aiCard: {
     label: "AI Medical Assistant",
     title: "Begin a New Consultation",
@@ -9,7 +25,7 @@ export const patientPortalData = {
     {
       label: "My Appointments",
       description: "Browse all appointments",
-      targetView: "visits",
+      targetView: "appointments",
     },
     {
       label: "Consultation History",
@@ -18,6 +34,21 @@ export const patientPortalData = {
     },
   ],
 };
+
+export const doctorPortalData: PortalData = {
+  quickActions: [
+    {
+      label: "Consultations",
+      description: "Browse all patient visits",
+      targetView: "consultations",
+    },
+    {
+      label: "Manage Availability",
+      description: "Define your schedule and open up slots for patient bookings",
+      targetView: "availability",
+    }
+  ],
+}
 
 export const patientInterview = {
   title: "AI Medical Assistant",

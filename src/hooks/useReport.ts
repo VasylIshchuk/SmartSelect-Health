@@ -1,24 +1,52 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "@/api/supabase";
-import { SummaryReportDetails } from "@/types/report";
+import { ReportHistoryItem, SummaryReportDetails } from "@/types/report";
 
 
 export const useReport = (userId: string | undefined) => {
-    const getReportDetails = useCallback(async (appointmentId: string): Promise<SummaryReportDetails | null> => {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const getConsultationDetails = useCallback(async (appointmentId: string): Promise<SummaryReportDetails | null> => {
+        setIsLoading(true);
         try {
-            const data = await fetchReportDetails(appointmentId);
+            const data = await fetchConsultationDetails(appointmentId);
             return data;
         } catch (error) {
             console.error("Error fetching report:", error);
             return null;
+        } finally {
+            setIsLoading(false);
         }
     }, [userId]);
 
-    return { getReportDetails };
+    const getReportsHistory = useCallback(async (): Promise<ReportHistoryItem[]> => {
+        if (!userId) return [];
+
+        setIsLoading(true);
+
+        try {
+            const reports = await fetchPatientReports(userId);
+            return reports;
+        } catch (error) {
+            return [];
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId]);
+
+    const getIsReport = useCallback(async (appointmentId: string): Promise<boolean> => {
+        try {
+            return await checkReportExists(appointmentId);
+        } catch (error) {
+            return false;
+        }
+    }, []);
+
+    return { getConsultationDetails, getReportsHistory, getIsReport, isLoading };
 };
 
 
-export const fetchReportDetails = async (
+export const fetchConsultationDetails = async (
     appointmentId: string
 ): Promise<SummaryReportDetails | null> => {
 
@@ -106,4 +134,77 @@ const calculateAge = (dateOfBirth: string): number => {
     }
 
     return age;
+};
+
+
+
+
+
+
+export const fetchPatientReports = async (userId: string) => {
+    const { data: reports, error } = await supabase
+        .from('reports')
+        .select(`
+                id, 
+                status,
+                created_at,
+                appointments (
+                    id,
+                    reported_symptoms,
+                    created_at,
+                    availability (
+                        start_time
+                    )
+                )
+        `)
+        .eq('patient_id', userId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw new Error(`Error fetching raports: ${error.message}`);
+
+    if (!reports) return [];
+
+    return reports.map(formatPatientReport);
+};
+
+const formatPatientReport = (item: any): ReportHistoryItem => {
+    const appointment = Array.isArray(item.appointments)
+        ? item.appointments[0]
+        : item.appointments;
+
+    const availability = Array.isArray(appointment?.availability)
+        ? appointment.availability[0]
+        : appointment?.availability;
+
+    const dateStr = availability?.start_time
+    const dateObj = new Date(dateStr);
+
+    return {
+        id: item.id,
+        appointmentId: appointment?.id,
+        reportedSymptoms: appointment?.reported_symptoms || 'No data on symptoms',
+        date: dateObj.toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        }),
+        time: dateObj.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: false
+        }),
+        status: item.status,
+    };
+};
+
+
+
+const checkReportExists = async (appointmentId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+        .from('appointments')
+        .select('report_id')
+        .eq('id', appointmentId)
+        .maybeSingle();
+
+    if (error) throw new Error(`Report checking error: ${error.message}`);
+
+    if (!data) return false
+
+    return !!data.report_id;
 };

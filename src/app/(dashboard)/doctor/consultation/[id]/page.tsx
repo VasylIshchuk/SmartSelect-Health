@@ -15,12 +15,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { useDoctor } from "@/hooks/useDoctor";
 import { ReportDetailsCard } from "@/components/shared/ReportDetailsCard";
+import { useReport } from "@/hooks/useReport";
 
 
 type AiRatingType = "accurate" | "inaccurate" | null;
 
 
-export default function VisitPage() {
+export default function AppointmentPage() {
   const router = useRouter();
   const params = useParams();
   const appointmentId = params.id as string;
@@ -34,7 +35,9 @@ export default function VisitPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { session } = useSession();
-  const { completeVisit, getIsReport } = useDoctor(session?.user?.id);
+  const { completeAppointment } = useDoctor(session?.user?.id);
+  const { getIsReport } = useReport(session?.user?.id);
+
 
   const handleSave = async () => {
     if (isSubmitting) return;
@@ -42,7 +45,7 @@ export default function VisitPage() {
     setIsSubmitting(true);
 
     try {
-      const success = await completeVisit({
+      const success = await completeAppointment({
         appointmentId: appointmentId,
         diagnosis: diagnosis,
         aiRating: aiRating
@@ -54,7 +57,7 @@ export default function VisitPage() {
           router.back();
         }, 1000);
       } else {
-        setErrorMessage("Failed to save the visit. Please try again.");
+        setErrorMessage("Failed to save the appointment. Please try again.");
         setIsSubmitting(false);
       }
     } catch (error) {
