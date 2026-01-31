@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { supabase } from "@/api/supabase";
-import { ReportHistoryItem, SummaryReportDetails } from "@/types/report";
+import { AiReportData, ReportHistoryItem, SummaryReportDetails } from "@/types/report";
 
 
 export const useReport = (userId: string | undefined) => {
@@ -42,7 +42,12 @@ export const useReport = (userId: string | undefined) => {
         }
     }, []);
 
-    return { getConsultationDetails, getReportsHistory, getIsReport, isLoading };
+    const createAiReport = useCallback(async (report: AiReportData): Promise<string> => {
+        if (!userId) throw new Error("User ID is missing. Cannot delete slots."); 
+        return await insertReport(userId, report);
+    }, [userId]);
+
+    return { getConsultationDetails, getReportsHistory, getIsReport, createAiReport, isLoading };
 };
 
 
@@ -71,7 +76,10 @@ export const fetchConsultationDetails = async (
                     ai_confidence_score,
                     ai_recommended_specializations,
                     sickness_duration,
-                    ai_diagnosis_suggestion,
+                    ai_primary_diagnosis,
+                    ai_diagnosis_reasoning,
+                    ai_suggested_management,
+                    ai_critical_warning,
                     reported_summary,
                     doctor_feedback_ai_rating
                 ),
@@ -112,7 +120,12 @@ const formatReport = (data: any): SummaryReportDetails => {
                 ai_confidence_score: reportData.ai_confidence_score,
                 ai_recommended_specializations: reportData.ai_recommended_specializations,
                 sickness_duration: reportData.sickness_duration,
-                ai_diagnosis_suggestion: reportData.ai_diagnosis_suggestion,
+
+                ai_primary_diagnosis: reportData.ai_primary_diagnosis,
+                ai_diagnosis_reasoning: reportData.ai_diagnosis_reasoning,
+                ai_suggested_management: reportData.ai_suggested_management,
+                ai_critical_warning: reportData.ai_critical_warning,
+
                 reported_summary: reportData.reported_summary,
                 doctor_feedback_ai_rating: reportData.doctor_feedback_ai_rating,
             }
@@ -207,4 +220,21 @@ const checkReportExists = async (appointmentId: string): Promise<boolean> => {
     if (!data) return false
 
     return !!data.report_id;
+};
+
+
+const insertReport = async (userId: string, report: AiReportData): Promise<string> => {
+    const { reported_symptoms, ...reportDataForDb } = report;
+    const { data, error } = await supabase
+        .from('reports')
+        .insert({
+            patient_id: userId,
+            ...reportDataForDb,
+            status: 'Sent to doctor'
+        })
+        .select('id')
+        .single();
+
+    if (error) throw new Error(`Failed to save the report: ${error.message}`);
+    return data.id;
 };

@@ -110,7 +110,7 @@ export const LocationAutocomplete = ({
                         }
                     }}
                     onFocus={() => setIsOpen(true)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 pl-9 text-sm text-slate-900 focus:border-blue-500 outline-none transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 pl-9 text-slate-900 focus:border-blue-500 outline-none transition-all"
                 />
                 <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </div>

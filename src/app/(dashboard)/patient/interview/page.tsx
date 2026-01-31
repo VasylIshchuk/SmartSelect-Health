@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useChatLogic } from "@/hooks/useChatLogic";
 import { ChatMessage } from "@/types/chat";
-import { ChatInputArea } from "@/components/dashboards/ChatInputArea";
+import { ChatInputArea } from "@/components/dashboards/patient/ChatInputArea";
 
 export default function InterviewPage() {
   const { chatMessages,

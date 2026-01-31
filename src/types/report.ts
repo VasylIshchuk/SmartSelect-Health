@@ -1,12 +1,20 @@
 export type AiReportData = {
+    reported_symptoms: string;
     reported_summary: string;
     sickness_duration: string;
-    ai_diagnosis_suggestion: string;
-    ai_confidence_score: number;
+
+    ai_primary_diagnosis: string;
+    ai_diagnosis_reasoning: string;
+    ai_suggested_management: string[];
+    ai_critical_warning: string | null;
     ai_recommended_specializations: string[];
-    reported_symptoms: string;
+
+    ai_confidence_score: number;
 };
 
+type DbAiDetails = Omit<AiReportData, 'reported_symptoms'> & {
+    doctor_feedback_ai_rating: string | null;
+};
 
 export type SummaryReportDetails = {
     appointment_id: string;
@@ -22,14 +30,7 @@ export type SummaryReportDetails = {
         first_name: string;
         last_name: string;
     };
-    details: {
-        reported_summary: string;
-        sickness_duration: string;
-        ai_confidence_score: number;
-        ai_recommended_specializations: string[];
-        ai_diagnosis_suggestion: string;
-        doctor_feedback_ai_rating: string | null;
-    } | null;
+    details: DbAiDetails | null;
 };
 
 

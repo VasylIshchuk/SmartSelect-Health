@@ -17,7 +17,8 @@ import { useAppointmentData } from '@/hooks/bookAppointment/useAppointmentData';
 import { useUser } from '@/hooks/useUser';
 import { AvailabilityDB } from '@/hooks/useAvailability';
 import { Doctor } from '@/hooks/useDoctor';
-import { LocationAutocomplete } from '@/components/dashboards/LocationAutocomplete';
+import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 
 const VISIT_TYPES = ["Sick visit", "Follow-up", "Consultation", "Appointment", "Referral"];
@@ -36,7 +37,7 @@ export default function BookAppointmentPage() {
     } = useAppointmentForm(user);
 
     const {
-        specializations, doctors, slots, bookAppointment
+        specializations, doctors, slots, bookAppointment, isBooking
     } = useAppointmentData(formData, userId);
 
     const { clearHistory } = useChatLogic();
@@ -53,7 +54,6 @@ export default function BookAppointmentPage() {
             localStorage.removeItem('medicalReport');
             router.push('/patient');
         }
-
     };
 
     return (
@@ -98,6 +98,7 @@ export default function BookAppointmentPage() {
                             formData={formData}
                             isFormComplete={isFormComplete}
                             onSubmit={handleSubmit}
+                            isBooking={isBooking}
                         />
                     </div>
                 </div>
@@ -452,7 +453,7 @@ const TimeSlotSection = ({ formData, setFormData, slots }: TimeSlotProps) => {
 
 
 
-const BookingSummary = ({ formData, isFormComplete, onSubmit }: any) => (
+const BookingSummary = ({ formData, isFormComplete, onSubmit, isBooking }: any) => (
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 sticky top-4">
         <h3 className="font-semibold text-slate-900 mb-4">Summary</h3>
 
@@ -467,11 +468,17 @@ const BookingSummary = ({ formData, isFormComplete, onSubmit }: any) => (
 
         <button
             onClick={onSubmit}
-            disabled={!isFormComplete}
+            disabled={!isFormComplete || isBooking}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-white font-medium shadow-lg shadow-blue-600/20 hover:bg-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
         >
-            <CheckCircle className="h-5 w-5" />
-            Confirm & Book
+            {isBooking ? (
+                <LoadingSpinner message="Booking..." />
+            ) : (
+                <>
+                <CheckCircle className="h-5 w-5" />
+                    Confirm & Book
+                </>
+            )}
         </button>
 
         <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">

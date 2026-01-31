@@ -91,7 +91,7 @@ export function useChatLogic() {
   };
 
   const handleAiSuccess = (data: ApiResponse) => {
-    let aiText = data.message || "Brak odpowiedzi.";
+    let aiText = data.message || "No response";
 
     if (data.status === "complete" && data.report) {
       setAiReport(data.report);

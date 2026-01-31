@@ -24,7 +24,6 @@ export type AvailabilityUI = {
 };
 
 
-
 export const useAvailability = (userId: string | undefined) => {
     const [isLoading, setIsLoading] = useState(false)
 
@@ -65,7 +64,32 @@ export const useAvailability = (userId: string | undefined) => {
         }
     }, [userId]);
 
-    return { getSlotsForDate, deleteSlots, insertSlots, getSlotsByDoctorIdForDate, isLoading }
+
+    const lockAvailabilitySlot = useCallback(async (selectedSlotId: string) => {
+        await markSlotAsBooked(selectedSlotId)
+    }, [])
+
+
+    const getOccupiedDates = useCallback(async (startDate: string, endDate: string): Promise<Set<string>> => {
+        if (!userId) return new Set();
+        setIsLoading(true);
+        
+        try {
+            return await getDatesWithSlotFromDateRange(userId, startDate, endDate);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId])
+
+    return {
+        getSlotsForDate,
+        deleteSlots,
+        insertSlots,
+        getSlotsByDoctorIdForDate,
+        lockAvailabilitySlot,
+        getOccupiedDates,
+        isLoading
+    }
 }
 
 
@@ -132,3 +156,33 @@ const fetchRawAvailability = async (doctorId: string, date: string, location_id:
 
     return data as AvailabilityDB[];
 };
+
+const markSlotAsBooked = async (selectedSlotId: string) => {
+    const { error } = await supabase
+        .from('availability')
+        .update({ is_booked: true })
+        .eq('id', selectedSlotId)
+
+    if (error) throw new Error(`Error locking the selected appointment slot: ${error.message}`);
+};
+
+
+const getDatesWithSlotFromDateRange = async (userId: string, startDate: string, endDate: string): Promise<Set<string>> => {
+    const { data, error } = await supabase
+        .from('availability')
+        .select('start_time')
+        .eq('doctor_id', userId)
+        .eq('is_booked', true)
+        .gte('start_time', `${startDate}T00:00:00`)
+        .lte('start_time', `${endDate}T23:59:59`);
+
+    if (error) throw new Error(`Error checking availability ${error.message}`);
+
+    if (data) {
+        return new Set(
+            data.map(slot => new Date(slot.start_time).toISOString().split('T')[0])
+        );
+    }
+    return new Set()
+}
+

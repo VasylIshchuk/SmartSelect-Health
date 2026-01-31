@@ -3,9 +3,9 @@
 import { patientPortalData } from "@/data/dashboard-data";
 import { CalendarDays, MessageSquare, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import DashboardHeader from "@/components/dashboards/DashboardHeader";
-import { QuickActionsList } from "@/components/dashboards/QuickActionsList";
-import { PatientAppointmentList } from "@/components/dashboards/PatientAppointmentList";
+import DashboardHeader from "@/components/shared/DashboardHeader";
+import { QuickActionsList } from "@/components/shared/QuickActionsList";
+import { PatientAppointmentList } from "@/components/dashboards/patient/PatientAppointmentList";
 
 
 export default function PatientPage() {

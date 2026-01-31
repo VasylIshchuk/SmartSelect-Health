@@ -16,7 +16,7 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Doctor, useAdmin } from "@/hooks/useAdmin";
-import DashboardHeader from "@/components/dashboards/DashboardHeader";
+import DashboardHeader from "@/components/shared/DashboardHeader";
 
 const ITEMS_PER_PAGE = 5;
 

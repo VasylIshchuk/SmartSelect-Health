@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
-import { useSession } from "../hoc/AuthSessionProvider";
 import { Appointment, useAppointment } from "@/hooks/useAppointments";
-import { AppointmentCard } from "../shared/AppointmentCard";
 import { useRouter } from "next/navigation";
-import { Spinner } from "../shared/Spinner";
+import { useSession } from "@/components/hoc/AuthSessionProvider";
+import { Spinner } from "@/components/shared/Spinner";
+import { AppointmentCard } from "@/components/shared/AppointmentCard";
+
 
 type Props = {
     filter: 'all' | 'today';

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { DashboardStats, useDoctor } from "@/hooks/useDoctor";
 import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { useEffect, useMemo, useState } from "react";
-import DashboardHeader from "@/components/dashboards/DashboardHeader";
+import DashboardHeader from "@/components/shared/DashboardHeader";
 import { doctorPortalData } from "@/data/dashboard-data";
-import { QuickActionsList } from "@/components/dashboards/QuickActionsList";
-import { DoctorAppointmentList } from "@/components/dashboards/DoctorAppointmentList";
+import { QuickActionsList } from "@/components/shared/QuickActionsList";
+import { DoctorAppointmentList } from "@/components/dashboards/doctor/DoctorAppointmentList";
 
 
 export default function DoctorPage() {

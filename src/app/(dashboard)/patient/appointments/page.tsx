@@ -1,6 +1,6 @@
 "use client"
 
-import { PatientAppointmentList } from "@/components/dashboards/PatientAppointmentList";
+import { PatientAppointmentList } from "@/components/dashboards/patient/PatientAppointmentList";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useRouter } from "next/navigation";
 

@@ -1,12 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { useAvailability, AvailabilityUI } from "@/hooks/useAvailability";
+import { useAvailability, AvailabilityUI, AvailabilityDB } from "@/hooks/useAvailability";
 import { useLocation, Location } from "@/hooks/useLocation";
-import { parseTimeForDate } from "@/app/(dashboard)/doctor/availability/page";
-import { format, addMinutes, isBefore, isEqual } from "date-fns";
-
-const DEFAULT_SLOT_DURATION = 30;
-const DEFAULT_BREAK_DURATION = 10;
-const DEFAULT_START_TIME = "09:00";
+import { calculateNextSlotTimes, generateSlotsUntilLimit, getAvailableDatesOptions, getSlotWarning, parseTimeForDate } from "@/utils/availability";
 
 
 export const useAvailabilityManager = (userId: string | undefined) => {
@@ -16,7 +11,11 @@ export const useAvailabilityManager = (userId: string | undefined) => {
     const [slots, setSlots] = useState<AvailabilityUI[]>([]);
     const [locations, setLocations] = useState<Location[]>([]);
 
-    const { getSlotsForDate, deleteSlots, insertSlots, isLoading } = useAvailability(userId);
+    const [occupiedDates, setOccupiedDates] = useState<Set<string>>(new Set());
+    const availableDates = useMemo(() => getAvailableDatesOptions(), []);
+
+
+    const { getSlotsForDate, deleteSlots, insertSlots, getOccupiedDates, isLoading } = useAvailability(userId);
     const { getLocationsByQueryOrSpecialization } = useLocation(userId);
 
     useEffect(() => {
@@ -33,7 +32,20 @@ export const useAvailabilityManager = (userId: string | undefined) => {
             if (data) setSlots(data);
         };
         fetchSlots();
-    }, [selectedDate, getSlotsForDate]);
+    }, [getSlotsForDate, selectedDate]);
+
+    useEffect(() => {
+        const fetchDates = async () => {
+            const startDate = availableDates[0].value;
+            const endDate = availableDates[availableDates.length - 1].value;
+
+            const busyDates = await getOccupiedDates(startDate, endDate);
+            setOccupiedDates(busyDates);
+        };
+
+        fetchDates();
+    }, [getOccupiedDates, availableDates]);
+
 
 
     const addSingleSlot = () => {
@@ -64,9 +76,25 @@ export const useAvailabilityManager = (userId: string | undefined) => {
 
 
     const updateSlotField = (id: string, field: keyof AvailabilityUI, value: string) => {
-        setSlots(prev => prev.map(slot =>
-            slot.id === id ? { ...slot, [field]: value } : slot
-        ));
+        setSlots(prev => prev.map(slot => {
+            if (slot.id !== id) return slot;
+
+            const updatedSlot = { ...slot, [field]: value };
+
+            if (field === 'start_time' || field === 'end_time') {
+                const start = parseTimeForDate(updatedSlot.start_time, selectedDate);
+                const end = parseTimeForDate(updatedSlot.end_time, selectedDate);
+
+                const diffMs = end.getTime() - start.getTime();
+                const diffMins = Math.round(diffMs / 60000);
+
+                if (diffMins > 0) {
+                    updatedSlot.duration = diffMins;
+                }
+            }
+
+            return updatedSlot;
+        }));
     };
 
 
@@ -80,18 +108,8 @@ export const useAvailabilityManager = (userId: string | undefined) => {
         setIsSaving(true);
         try {
             await deleteSlots(selectedDate);
-
-            const dbSlots = slots
-                .filter(s => !s.is_booked)
-                .map(slot => ({
-                    doctor_id: userId,
-                    location_id: slot.location_id,
-                    start_time: parseTimeForDate(slot.start_time, selectedDate).toISOString(),
-                    end_time: parseTimeForDate(slot.end_time, selectedDate).toISOString(),
-                    is_booked: false
-                }));
-
-            await insertSlots(dbSlots);
+            const dbSlots = prepareSlotsForDb(slots, selectedDate);
+            if (dbSlots.length > 0) await insertSlots(dbSlots);
 
             const refreshed = await getSlotsForDate(selectedDate);
             setSlots(refreshed);
@@ -103,56 +121,21 @@ export const useAvailabilityManager = (userId: string | undefined) => {
     };
 
 
-    const processedSlots = useMemo(() => {
-        return slots.map((currentSlot) => {
-            const warning = validateSlot(currentSlot, slots, selectedDate);
-            
-            return {
-                ...currentSlot,
-                conflictWarning: warning
-            };
-        });
-    }, [slots, selectedDate]);
-
-    const hasConflicts = useMemo(() =>
-        processedSlots.some(s => s.conflictWarning !== null),
-        [processedSlots]);
-
-    const hasMissingFields = useMemo(() => {
-        return slots.some(slot => 
-            !slot.start_time || 
-            !slot.end_time || 
-            !slot.location_id
-        );
-    }, [slots]);
-
-
     const copyScheduleToDates = async (targetDates: string[]) => {
         if (!userId || targetDates.length === 0) return;
 
         setIsSaving(true);
         try {
-            const slotsToCopy = slots.filter(s => !s.is_booked);
 
-            if (slotsToCopy.length === 0) {
+            if (slots.length === 0) {
                 alert("No available slots to copy.");
                 return;
             }
 
             const promises = targetDates.map(async (targetDate) => {
                 await deleteSlots(targetDate);
-
-                const newSlotsForDB = slotsToCopy.map(slot => ({
-                    doctor_id: userId,
-                    location_id: slot.location_id,
-                    start_time: parseTimeForDate(slot.start_time, targetDate).toISOString(),
-                    end_time: parseTimeForDate(slot.end_time, targetDate).toISOString(),
-                    is_booked: false
-                }));
-
-                if (newSlotsForDB.length > 0) {
-                    await insertSlots(newSlotsForDB);
-                }
+                const dbSlots = prepareSlotsForDb(slots, targetDate);
+                if (dbSlots.length > 0) await insertSlots(dbSlots)
             });
 
             await Promise.all(promises);
@@ -167,6 +150,47 @@ export const useAvailabilityManager = (userId: string | undefined) => {
         }
     };
 
+    const prepareSlotsForDb = (
+        slotsToSave: AvailabilityUI[],
+        targetDate: string
+    ): Omit<AvailabilityDB, "id" | "duration">[] => {
+        if (!userId) return [];
+        return slotsToSave
+            .filter(s => !s.is_booked)
+            .map(slot => ({
+                doctor_id: userId,
+                location_id: slot.location_id,
+                start_time: parseTimeForDate(slot.start_time, targetDate).toISOString(),
+                end_time: parseTimeForDate(slot.end_time, targetDate).toISOString(),
+                is_booked: false
+            }));
+    };
+
+
+    const processedSlots = useMemo(() => {
+        return slots.map((currentSlot) => {
+            const warning = getSlotWarning(currentSlot, slots, selectedDate);
+
+            return {
+                ...currentSlot,
+                conflictWarning: warning
+            };
+        });
+    }, [slots, selectedDate]);
+
+    const hasConflicts = useMemo(() =>
+        processedSlots.some(s => s.conflictWarning !== null),
+        [processedSlots]);
+
+    const hasMissingFields = useMemo(() => {
+        return slots.some(slot =>
+            !slot.start_time ||
+            !slot.end_time ||
+            !slot.location_id
+        );
+    }, [slots]);
+
+
     return {
         selectedDate, setSelectedDate,
         slots: processedSlots,
@@ -175,6 +199,8 @@ export const useAvailabilityManager = (userId: string | undefined) => {
         isSaving,
         hasConflicts,
         hasMissingFields,
+        occupiedDates,
+        availableDates,
 
         addSingleSlot,
         generateMagicSlots,
@@ -185,92 +211,3 @@ export const useAvailabilityManager = (userId: string | undefined) => {
     };
 };
 
-
-const calculateNextSlotTimes = (lastSlot: AvailabilityUI | undefined, dateStr: string) => {
-    if (!lastSlot) {
-        const start = parseTimeForDate(DEFAULT_START_TIME, dateStr);
-        const end = addMinutes(start, DEFAULT_SLOT_DURATION);
-        return {
-            newStart: format(start, 'HH:mm'),
-            newEnd: format(end, 'HH:mm'),
-            duration: DEFAULT_SLOT_DURATION
-        };
-    }
-
-    const lastEndObj = parseTimeForDate(lastSlot.end_time, dateStr);
-    const nextStartObj = addMinutes(lastEndObj, DEFAULT_BREAK_DURATION);
-    const nextEndObj = addMinutes(nextStartObj, lastSlot.duration);
-
-    return {
-        newStart: format(nextStartObj, 'HH:mm'),
-        newEnd: format(nextEndObj, 'HH:mm'),
-        duration: lastSlot.duration
-    };
-};
-
-
-
-const generateSlotsUntilLimit = (
-    lastSlot: AvailabilityUI,
-    limitTimeStr: string,
-    dateStr: string
-): AvailabilityUI[] => {
-    const endObj = parseTimeForDate(lastSlot.end_time, dateStr);
-    const limitObj = parseTimeForDate(limitTimeStr, dateStr);
-
-    let currentStart = addMinutes(endObj, DEFAULT_BREAK_DURATION);
-    const newSlots: AvailabilityUI[] = [];
-
-    while (isBefore(currentStart, limitObj) || isEqual(currentStart, limitObj)) {
-        const currentEnd = addMinutes(currentStart, lastSlot.duration);
-        if (isBefore(limitObj, currentEnd)) break;
-
-        newSlots.push({
-            id: Math.random().toString(36).substr(2, 9),
-            start_time: format(currentStart, 'HH:mm'),
-            end_time: format(currentEnd, 'HH:mm'),
-            location_id: lastSlot.location_id,
-            duration: lastSlot.duration,
-            is_booked: false,
-            is_new: true
-        });
-
-        currentStart = addMinutes(currentEnd, DEFAULT_BREAK_DURATION);
-    }
-
-    return newSlots;
-};
-
-
-
-
-const validateSlot = (currentSlot: AvailabilityUI, allSlots: AvailabilityUI[], dateStr: string): string | null => {
-    const myStart = parseTimeForDate(currentSlot.start_time, dateStr);
-    const myEnd = parseTimeForDate(currentSlot.end_time, dateStr);
-
-    if (myStart >= myEnd) {
-        return "End time must be after start time";
-    }
-
-    for (const otherSlot of allSlots) {
-        if (otherSlot.id === currentSlot.id) continue;
-
-        const otherStart = parseTimeForDate(otherSlot.start_time, dateStr);
-        const otherEnd = parseTimeForDate(otherSlot.end_time, dateStr);
-
-
-        if (myStart < otherEnd && myEnd > otherStart) {
-            return `Overlaps with ${otherSlot.start_time} - ${otherSlot.end_time}`;
-        }
-
-  
-        if (otherEnd <= myStart) {
-            const gapMinutes = (myStart.getTime() - otherEnd.getTime()) / 60000;
-            if (gapMinutes < DEFAULT_BREAK_DURATION && gapMinutes >= 0) {
-                 return `Break too short (<${DEFAULT_BREAK_DURATION}m) after ${otherSlot.end_time}`;
-            }
-        }
-    }
-
-    return null;
-};

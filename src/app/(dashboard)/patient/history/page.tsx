@@ -31,23 +31,6 @@ export default function HistoryPage() {
   }, [getReportsHistory]);
 
 
-  if (isLoading || reports === null) {
-    return (
-      <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (reports.length === 0) {
-    return (
-      <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
-        No consultation history.
-      </div>
-    );
-  }
-
-
   return (
     <section className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <SectionHeader
@@ -56,11 +39,21 @@ export default function HistoryPage() {
         onBack={() => router.back()}
       />
 
-      <div className="flex flex-col gap-3">
-        {reports.map((report) => (
-          <HistoryCard key={report.id} report={report} />
-        ))}
-      </div>
+      {(isLoading || reports === null) ? (
+        <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
+          <Spinner />
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="rounded-3xl bg-slate-50 p-8 text-center text-slate-500">
+          No consultation history.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {reports.map((report) => (
+            <HistoryCard key={report.id} report={report} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

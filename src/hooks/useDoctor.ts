@@ -189,7 +189,7 @@ const fetchAppointmentsWithAI = async (doctorId: string) => {
         .from("appointments")
         .select("reports!inner(id)", { count: "exact", head: true })
         .eq("doctor_id", doctorId)
-        .not("reports.ai_diagnosis_suggestion", "is", null);
+        .not("reports.ai_primary_diagnosis", "is", null);
 
     if (error) throw new Error(`Error counting patients: ${error.message}`);
 

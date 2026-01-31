@@ -5,12 +5,12 @@ import { Calendar as CalendarIcon, MapPin, Plus, Save, Copy, Trash2, Clock, Wand
 import { useRouter } from "next/navigation";
 import { AvailabilityUI } from "@/hooks/useAvailability";
 import { useSession } from "@/components/hoc/AuthSessionProvider";
-import { useLocation, Location } from "@/hooks/useLocation";
+import { Location } from "@/hooks/useLocation";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useAvailabilityManager } from "@/hooks/useAvailabilityManager";
-import { LocationAutocomplete } from "@/components/dashboards/LocationAutocomplete";
+import { LocationAutocomplete } from "@/components/shared/LocationAutocomplete";
 import { Spinner } from "@/components/shared/Spinner";
-import { addDays, format } from "date-fns";
+import { ModalAddLocation, ModalCopySchedule } from "@/components/dashboards/doctor/DoctorAvailabilityModals";
 
 
 export default function ManageAvailabilityPage() {
@@ -52,7 +52,6 @@ export default function ManageAvailabilityPage() {
                         onSave={manager.saveChanges}
                         isSaving={manager.isSaving}
                         hasConflicts={manager.hasConflicts}
-                        hasSlots={manager.slots.length > 0}
                         hasMissingFields={manager.hasMissingFields}
                     />
 
@@ -71,7 +70,7 @@ export default function ManageAvailabilityPage() {
                             </div>
                         ) : (
                             <div className="divide-y divide-slate-100">
-                                <div className="grid grid-cols-12 gap-4 bg-slate-50/50 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <div className="hidden md:grid grid-cols-12 gap-4 bg-slate-50/50 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">
                                     <div className="col-span-3">Start</div>
                                     <div className="col-span-3">End</div>
                                     <div className="col-span-4">Location</div>
@@ -106,25 +105,14 @@ export default function ManageAvailabilityPage() {
 
             {isCopyModalOpen && (
                 <ModalCopySchedule
+                    userId={userId}
                     onClose={() => setIsCopyModalOpen(false)}
-                    onCopy={manager.copyScheduleToDates}
                 />
             )}
 
         </div>
     );
 }
-
-
-
-
-export const parseTimeForDate = (timeStr: string, dateBaseStr: string): Date => {
-    if (!timeStr) return new Date();
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date(dateBaseStr);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-};
 
 
 
@@ -137,15 +125,22 @@ type DatePickerCardProps = {
 const DatePickerCard = ({ selectedDate, setSelectedDate, setIsCopyModalOpen }: DatePickerCardProps) => {
     return (
         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm" >
+            <style>{`
+                input[type="date"]::-webkit-date-and-time-value {
+                    text-align: left; 
+                    margin-left: 0;
+                }
+            `}</style>
+
             <label className="mb-3 block text-sm font-semibold text-slate-700">Select Date</label>
             <div className="relative">
                 <input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pl-11 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                    className="appearance-none w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pl-11 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all min-h-[46px]"
                 />
-                <CalendarIcon className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+                <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
             </div>
 
             <div className="mt-6 pt-6 border-t border-slate-50">
@@ -192,19 +187,22 @@ type ToolbarProps = {
     onSave: () => void;
     isSaving: boolean;
     hasConflicts: boolean;
-    hasSlots: boolean;
     hasMissingFields: boolean;
 }
 
 const AvailabilityToolbar = ({
-    onAddSlot, onGenerateSlots, onSave, isSaving, hasConflicts, hasSlots, hasMissingFields
+    onAddSlot, onGenerateSlots, onSave, isSaving, hasConflicts, hasMissingFields
 }: ToolbarProps) => {
     const [workEndTime, setWorkEndTime] = useState("");
+    const [isFocused, setIsFocused] = useState(false);
 
     return (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sticky top-4 z-10">
-            <div className="flex items-center gap-4">
-
+        <div className="
+            sticky top-4 z-10 
+            rounded-2xl border border-slate-100 bg-white p-4 shadow-sm 
+            flex flex-col md:flex-row md:items-center md:justify-between gap-4
+        ">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 w-full md:w-auto">
                 <button
                     onClick={onAddSlot}
                     className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-100 transition-colors"
@@ -214,36 +212,47 @@ const AvailabilityToolbar = ({
                 </button>
 
 
-                <div className="h-8 w-px bg-slate-200"></div>
+                <div className="hidden md:block h-8 w-px bg-slate-200"></div>
 
 
                 <div className="flex items-center gap-2 rounded-xl bg-purple-50 p-1 pr-2 border border-purple-100">
                     <button
                         onClick={() => onGenerateSlots(workEndTime)}
                         disabled={!workEndTime}
-                        title={!workEndTime ? "Set end time first" : "Auto-fill based on last slot duration + 10min break"}
-                        className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition-all 
+                        title={!workEndTime ? "You need to set the end time before continuing" : "Auto-fill based on last slot duration + 10min break"}
+                        className="flex h-9 items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold shadow-sm transition-all 
                                                 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-400 
                                                 disabled:shadow-none text-purple-700 hover:bg-purple-50"                                >
                         <Wand2 className="h-3.5 w-3.5" />
                         Magic Fill
                     </button>
 
+                    <div className="relative h-9 flex-1 ">
+                        {(!workEndTime && !isFocused) && (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold text-purple-400">
+                                Set end time
+                            </span>
+                        )}
 
-                    <input
-                        type="time"
-                        value={workEndTime}
-                        placeholder="Set end time"
-                        onChange={(e) => setWorkEndTime(e.target.value)}
-                        className="bg-transparent text-sm font-bold text-purple-900 outline-none focus:underline cursor-pointer w-26 text-center"
-                    />
+                        <input
+                            type="time"
+                            value={workEndTime}
+                            onChange={(e) => setWorkEndTime(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            className={`h-full w-full mr-8  bg-transparent text-center text-sm font-bold outline-none focus:underline cursor-pointer
+                               ${(!workEndTime && !isFocused) ? 'text-transparent' : 'text-purple-900'}
+                            `}
+                        />
+                    </div>
+
                 </div>
             </div>
 
 
             <button
                 onClick={onSave}
-                disabled={isSaving || !hasSlots || hasConflicts || hasMissingFields}
+                disabled={isSaving || hasConflicts || hasMissingFields}
                 title={hasConflicts ? "Fix schedule conflicts first" : "Save changes"}
                 className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-200 active:scale-95 transition-all
                                 ${hasConflicts
@@ -292,8 +301,10 @@ const SlotRow = ({ slot, locations, onUpdate, onRemove, onNewLocation }: SlotRow
         : "";
 
     return (
-        <div className="group grid grid-cols-12 gap-4 items-center px-6 py-4 hover:bg-blue-50/30 transition-colors relative border-b border-slate-100 last:border-0">
-            <div className="col-span-3 relative">
+        <div className="group grid grid-cols-2 md:grid-cols-12 gap-4 items-center px-6 py-4 hover:bg-blue-50/30 transition-colors relative border-b border-slate-100 last:border-0">
+            <div className="col-span-1 md:col-span-3 relative">
+                <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400 md:hidden">Start</span>
+
                 <input
                     type="time"
                     value={slot.start_time}
@@ -309,7 +320,9 @@ const SlotRow = ({ slot, locations, onUpdate, onRemove, onNewLocation }: SlotRow
                 )}
             </div>
 
-            <div className="col-span-3">
+            <div className="col-span-1 md:col-span-3">
+                <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400 md:hidden">End</span>
+
                 <input
                     type="time"
                     value={slot.end_time}
@@ -319,7 +332,9 @@ const SlotRow = ({ slot, locations, onUpdate, onRemove, onNewLocation }: SlotRow
                 />
             </div>
 
-            <div className="col-span-4 relative">
+            <div className="col-span-2 md:col-span-4 relative">
+                <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400 md:hidden">Location</span>
+
                 {isLocked ? (
                     <div className="relative">
                         <input
@@ -358,206 +373,3 @@ const SlotRow = ({ slot, locations, onUpdate, onRemove, onNewLocation }: SlotRow
     );
 };
 
-
-
-type ModalAddLocationProps = {
-    userId: string | undefined;
-    onClose: () => void;
-    onLocationAdded: (location: Location) => void;
-}
-
-const ModalAddLocation = ({ userId, onClose, onLocationAdded }: ModalAddLocationProps) => {
-    const [newLocation, setNewLocation] = useState<Omit<Location, 'id'>>({
-        name: '',
-        city: '',
-        address: ''
-    });
-    const { insertLocation } = useLocation(userId);
-
-    const handleAddLocation = async () => {
-        if (!newLocation.name || !newLocation.city || !newLocation.address) return;
-
-        const data = await insertLocation(newLocation);
-
-        if (data) {
-            onLocationAdded(data);
-            setNewLocation({ name: '', city: '', address: '' });
-            onClose();
-        }
-    };
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl ring-1 ring-slate-100">
-                <div className="mb-6">
-                    <h2 className="text-xl font-bold text-slate-900">Add New Location</h2>
-                    <p className="text-sm text-slate-500">Create a new place where you accept patients.</p>
-                </div>
-
-                <div className="space-y-4">
-                    <InputLocation
-                        title="Location Name"
-                        placeholder="e.g. Central Clinic"
-                        value={newLocation?.name}
-                        onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
-                    />
-                    <InputLocation
-                        title="City"
-                        placeholder="e.g. Warsaw"
-                        value={newLocation.city}
-                        onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })}
-                    />
-                    <InputLocation
-                        title="Address"
-                        placeholder="e.g. Dębinki 7"
-                        value={newLocation.address}
-                        onChange={(e) => setNewLocation({ ...newLocation, address: e.target.value })}
-                    />
-                </div>
-
-                <div className="mt-8 flex gap-3">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleAddLocation}
-                        className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
-                    >
-                        Create Location
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-type InputLocationProps = {
-    title: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder?: string;
-}
-
-const InputLocation = ({ title, value, onChange, placeholder }: InputLocationProps) => {
-    return (
-        <div>
-            <label className="block text-xs font-semibold uppercase text-slate-500 mb-1">
-                {title}
-            </label>
-            <input
-                type="text"
-                placeholder={placeholder}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                value={value}
-                onChange={onChange}
-            />
-        </div>
-    );
-};
-
-
-
-
-
-const ModalCopySchedule = ({ onClose, onCopy }: {
-    onClose: () => void,
-    onCopy: (dates: string[]) => Promise<boolean | void>,
-}) => {
-    const [selectedDates, setSelectedDates] = useState<string[]>([]);
-    const [isCopying, setIsCopying] = useState(false);
-
-    const availableDates = Array.from({ length: 14 }, (_, i) => {
-        const date = addDays(new Date(), i + 1);
-        return {
-            value: date.toISOString().split('T')[0],
-            label: format(date, 'EEE, MMM d'),
-            fullLabel: format(date, 'EEEE, MMMM d, yyyy')
-        };
-    });
-
-    const toggleDate = (dateVal: string) => {
-        if (selectedDates.includes(dateVal)) {
-            setSelectedDates(prev => prev.filter(d => d !== dateVal));
-        } else {
-            setSelectedDates(prev => [...prev, dateVal]);
-        }
-    };
-
-    const handleCopy = async () => {
-        if (selectedDates.length === 0) return;
-
-        setIsCopying(true);
-        const success = await onCopy(selectedDates);
-        setIsCopying(false);
-
-        if (success) onClose();
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-lg rounded-3xl bg-white p-8 shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="flex items-center gap-3 mb-6 shrink-0">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                        <Copy className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-900">Copy Schedule</h2>
-                        <p className="text-xs text-slate-500">Replicate today's plan to other days</p>
-                    </div>
-                </div>
-
-                <div className="mb-2 text-xs font-semibold uppercase text-slate-500 tracking-wider">Select Target Dates</div>
-
-                <div className="flex-1 overflow-y-auto pr-2 mb-6 border rounded-xl border-slate-100 bg-slate-50 p-2">
-                    <div className="grid grid-cols-2 gap-2">
-                        {availableDates.map((item) => {
-                            const isSelected = selectedDates.includes(item.value);
-                            return (
-                                <button
-                                    key={item.value}
-                                    onClick={() => toggleDate(item.value)}
-                                    className={`flex items-center justify-between p-3 rounded-lg text-sm transition-all text-left
-                                        ${isSelected
-                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
-                                            : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-100'
-                                        }`}
-                                >
-                                    <span className="font-medium">{item.label}</span>
-                                    {isSelected && <div className="h-2 w-2 rounded-full bg-white" />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 shrink-0 pt-4 border-t border-slate-100">
-                    <button
-                        onClick={onClose}
-                        className="rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-                        disabled={isCopying}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleCopy}
-                        disabled={selectedDates.length === 0 || isCopying}
-                        className="flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-200 active:scale-95 transition-all"
-                    >
-                        {isCopying ? (
-                            <>
-                                <Spinner />
-                                Copying...
-                            </>
-                        ) : (
-                            <>
-                                Copy to {selectedDates.length > 0 ? `${selectedDates.length} days` : ''}
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};

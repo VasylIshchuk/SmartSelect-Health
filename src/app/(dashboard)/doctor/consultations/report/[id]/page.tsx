@@ -1,6 +1,6 @@
 "use client"
 
-import { ReportView } from "@/components/dashboards/ReportView";
+import { ReportView } from "@/components/shared/ReportView";
 import { useParams } from "next/navigation";
 
 export default function DoctorReportPage() {
