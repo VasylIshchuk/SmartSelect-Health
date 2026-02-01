@@ -1,11 +1,11 @@
-import os
 import requests
 import xml.etree.ElementTree as ET
 import pandas as pd
 
 from bs4 import BeautifulSoup
-from .app_logging import logger
+from app.core.logging import logger
 from datetime import datetime, timedelta
+from app.core.config import settings
 
 
 today = datetime.now()
@@ -13,19 +13,6 @@ yesterday = today - timedelta(days=1)
 data_str = yesterday.strftime("%Y-%m-%d")
 
 XML_URL = f"https://medlineplus.gov/xml/mplus_topics_{data_str}.xml"
-
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-backend_dir = os.path.dirname(script_dir)
-
-RAG_FILE = os.path.join(backend_dir, "medlineplus_knowledge_base.csv")
-
-
-def clean_html_text(html_content):
-    if not html_content:
-        return ""
-    soup = BeautifulSoup(html_content, "html.parser")
-    return soup.get_text(separator=" ", strip=True)
 
 
 def download_and_process():
@@ -64,8 +51,15 @@ def download_and_process():
         )
 
     df = pd.DataFrame(data_rows)
-    df.to_csv(RAG_FILE, index=False, encoding="utf-8")
+    df.to_csv(settings.RAG_DATA_PATH, index=False, encoding="utf-8")
 
     logger.info(
-        f"[INFO] Data written to file: {RAG_FILE}. Processed {len(df)} records."
+        f"[INFO] Data written to file: {settings.RAG_DATA_PATH}. Processed {len(df)} records."
     )
+
+
+def clean_html_text(html_content):
+    if not html_content:
+        return ""
+    soup = BeautifulSoup(html_content, "html.parser")
+    return soup.get_text(separator=" ", strip=True)

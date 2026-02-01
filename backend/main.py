@@ -4,15 +4,19 @@ import json
 from json import JSONDecodeError
 from typing import Optional, List, Dict, Any, Annotated
 from fastapi.middleware.cors import CORSMiddleware
-from .errors import ToolError, ToolTimeout, InvalidHistoryFormatError, ImageProcessingError
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from .guardrails import guard_input, scrub_output
-from .llm_runner import run_with_retry_chat, ChatMessage
-from .errors import (
+from app.core.exceptions import (
+    ToolError,
+    ToolTimeout,
+    InvalidHistoryFormatError,
+    ImageProcessingError,
     SecurityBlocked,
     ValidationError,
 )
-from .app_logging import logger
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.concurrency import run_in_threadpool
+from app.utils.guardrails import guard_input, scrub_output
+from app.services.llm_service import run_with_retry_chat, ChatMessage
+from app.core.logging import logger
 
 
 app = FastAPI(title="Groq Hosted Model API")
@@ -31,20 +35,19 @@ MAX_HISTORY_LENGTH = 10000
 MAX_K_RETRIEVAL = 10
 
 
-
 @app.get("/")
 def root():
-    return ({"message": "This is my llm_text"})
+    return {"message": "This is my llm_text"}
 
 
 @app.post("/ask")
 async def ask(
-        message: Annotated[str, Form(min_length=1, max_length=MAX_MESSAGE_LENGTH)],
-        history: Annotated[str, Form(max_length=MAX_HISTORY_LENGTH)] = "[]",
-        images: Optional[List[UploadFile]] = File(None),
-        k: Annotated[int, Form(ge=1, le=MAX_K_RETRIEVAL)] = 5,
-        mode: str = Form("api"),
-        use_functions: bool = Form(True)
+    message: Annotated[str, Form(min_length=1, max_length=MAX_MESSAGE_LENGTH)],
+    history: Annotated[str, Form(max_length=MAX_HISTORY_LENGTH)] = "[]",
+    images: Optional[List[UploadFile]] = File(None),
+    k: Annotated[int, Form(ge=1, le=MAX_K_RETRIEVAL)] = 5,
+    mode: str = Form("api"),
+    use_functions: bool = Form(True),
 ):
     logger.info("Endpoint ask called")
     try:
@@ -52,7 +55,7 @@ async def ask(
 
         chat_history = _parse_chat_history(history)
 
-        guard_input(message)
+        await run_in_threadpool(guard_input, message)
 
         result = await run_with_retry_chat(
             current_message=message,
@@ -60,7 +63,7 @@ async def ask(
             history=chat_history,
             api_mode=mode,
             images_list=processed_images,
-            k=k
+            k=k,
         )
 
         return _format_llm_response(result)
@@ -85,7 +88,9 @@ async def ask(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-async def _process_uploaded_images(files: Optional[List[UploadFile]]) -> List[Dict[str, str]]:
+async def _process_uploaded_images(
+    files: Optional[List[UploadFile]],
+) -> List[Dict[str, str]]:
     if not files:
         return []
 
@@ -94,17 +99,22 @@ async def _process_uploaded_images(files: Optional[List[UploadFile]]) -> List[Di
         logger.info(f"Processing image: {image.filename}")
         try:
             content = await image.read()
-            b64 = base64.b64encode(content).decode('utf-8')
             mime = image.content_type or "image/jpeg"
-            processed.append({
-                "data": b64,
-                "mime": mime
-            })
+
+            image_data = await run_in_threadpool(_encode_image_sync, content, mime)
+
+            processed.append(image_data)
         except Exception as e:
             logger.error(f"Failed to process image {image.filename}: {e}")
             raise ImageProcessingError(f"Failed to process image {image.filename}")
 
     return processed
+
+
+def _encode_image_sync(content: bytes, mime: str) -> Dict[str, str]:
+    b64 = base64.b64encode(content).decode("utf-8")
+    return {"data": b64, "mime": mime}
+
 
 def _parse_chat_history(history_json: str) -> List[ChatMessage]:
     if not history_json or not history_json.strip():
