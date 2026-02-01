@@ -1,0 +1,72 @@
+# ========================
+# GLOBAL (Dla całego projektu)
+# ========================
+# Systemowe i IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.pem
+*.log
+
+# Zmienne środowiskowe (Sekrety)
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Zależności Node (działa dla root i frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ========================
+# BACKEND (Python)
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Środowiska wirtualne (łapie venv w każdym miejscu)
+venv/
+.venv/
+env/
+
+# Specyficzne pliki Twojego projektu (widoczne na screenach)
+backend/api.log
+backend/db.sqlite3
+backend/report.md
+
+backend/*.csv
+backend/medlineplus_knowledge_base.csv
+
+# Testy i Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ========================
+# FRONTEND (React/Next.js)
+# ========================
+# Build files
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+
+# Vercel
+frontend/.vercel
+
+# TypeScript & Testing
+frontend/coverage/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Yarn Berry (jeśli używasz)
+.pnp
+.pnp.js
+.yarn/install-state.gz
+.yarn/cache
