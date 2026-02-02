@@ -23,7 +23,8 @@ app = FastAPI(title="Groq Hosted Model API")
 
 origins = [
     "http://localhost:3000",
-    "https://smartselect-health-frontend.vercel.app",
+    "https://smartselect-health.vercel.app",
+    "https://smartselect-health-de86vffus-vasyls-projects-5eb4dd28.vercel.app",
     "*",
 ]
 

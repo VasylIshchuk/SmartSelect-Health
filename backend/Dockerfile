@@ -19,8 +19,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends gcc g++ libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-
-
+    
 # Working Directory
 WORKDIR /backend
 
@@ -42,5 +41,8 @@ COPY . .
 # Create data directory explicitely
 RUN mkdir -p /backend/data/knowledge_base 
 
+
+# Build the index during image creation
+RUN python -m scripts.build_rag_index
 # Running
-CMD python -m scripts.build_rag_index && uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
