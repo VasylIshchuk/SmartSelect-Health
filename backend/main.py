@@ -21,6 +21,13 @@ from app.core.logging import logger
 
 app = FastAPI(title="Groq Hosted Model API")
 
+origins = [
+    "http://localhost:3000",
+    "https://smartselect-health-frontend.vercel.app",
+    "*",
+]
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

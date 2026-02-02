@@ -1,14 +1,8 @@
+import { API_URL } from "@/types/api";
 import { ApiResponse, ChatMessage } from "@/types/chat";
 import { AiReportData } from "@/types/report";
 import { useCallback, useEffect, useState } from "react";
 
-const isServer = typeof window === 'undefined';
-
-const BASE_URL = isServer
-  ? (process.env.API_URL_INTERNAL || "http://backend:8000") 
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000");
-
-const API_URL = `${BASE_URL}/ask`;
 
 const getCurrentTime = () =>
   new Date().toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });

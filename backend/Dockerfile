@@ -3,6 +3,7 @@
 # Lightweight base image Python (Slim is lighter (Linux) than full but has the necessary libraries)
 FROM python:3.11-slim
 
+ENV PORT=8000
 
 # Environment variables:
 # PYTHONDONTWRITEBYTECODE - do not create .pyc files (unnecessary in the container)
@@ -42,4 +43,4 @@ COPY . .
 RUN mkdir -p /backend/data/knowledge_base 
 
 # Running
-CMD python -m scripts.build_rag_index && uvicorn main:app --host 0.0.0.0 --port 8000 
+CMD python -m scripts.build_rag_index && uvicorn main:app --host 0.0.0.0 --port $PORT
