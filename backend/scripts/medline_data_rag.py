@@ -4,15 +4,10 @@ import pandas as pd
 
 from bs4 import BeautifulSoup
 from app.core.logging import logger
-from datetime import datetime, timedelta
 from app.core.config import settings
 
 
-today = datetime.now()
-yesterday = today - timedelta(days=1)
-data_str = yesterday.strftime("%Y-%m-%d")
-
-XML_URL = f"https://medlineplus.gov/xml/mplus_topics_{data_str}.xml"
+XML_URL = "https://medlineplus.gov/xml/mplus_topics_2026-01-31.xml"
 
 
 def download_and_process():
