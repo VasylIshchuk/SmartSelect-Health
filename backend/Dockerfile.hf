@@ -1,0 +1,38 @@
+FROM python:3.11-slim
+
+# Install system tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc g++ libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# User configuration (Hugging Face requirement)
+# HF Spaces run as user 1000, not root
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
+WORKDIR $HOME/backend
+
+# Copy files (with permissions for the non-root user)
+COPY --chown=user . $HOME/backend
+
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip
+
+# Install Torch CPU (HF has 16GB RAM, so we can use standard Torch but CPU version saves download time)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Install other requirements
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create database directory explicitly
+RUN mkdir -p $HOME/backend/data/knowledge_base
+
+# Build the RAG index during build time
+# We use placeholder variables to bypass Pydantic validation during the build
+ENV PYTHONPATH=$HOME/backend
+RUN GROQ_API_KEY=build_placeholder EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2 python -m scripts.build_rag_index
+
+# Start the application on port 7860 (Required by Hugging Face)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

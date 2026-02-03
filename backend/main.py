@@ -24,7 +24,6 @@ app = FastAPI(title="Groq Hosted Model API")
 origins = [
     "http://localhost:3000",
     "https://smartselect-health.vercel.app",
-    "https://smartselect-health-de86vffus-vasyls-projects-5eb4dd28.vercel.app",
     "*",
 ]
 
@@ -45,7 +44,7 @@ MAX_K_RETRIEVAL = 10
 
 @app.get("/")
 def root():
-    return {"message": "This is my llm_text"}
+    return {"message": "Hello!"}
 
 
 @app.post("/ask")

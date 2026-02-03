@@ -147,8 +147,13 @@ export function useChatLogic() {
 }
 
 async function fetchChatResponse(message: string, history: ChatMessage[], files: File[]): Promise<ApiResponse> {
+  let messageToSend = message;
+
+  if (!message.trim() && files.length > 0)
+    messageToSend = "Please analyze the attached image and describe any visible medical symptoms or issues.";
+
   const formData = new FormData();
-  formData.append("message", message);
+  formData.append("message", messageToSend);
   formData.append("history", JSON.stringify(
     history.map((msg) => ({
       role: msg.author === "user" ? "user" : "assistant",
