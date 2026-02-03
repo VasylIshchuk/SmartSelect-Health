@@ -40,7 +40,7 @@ start: ## 🚀 Start the application (rebuild if changes)
 	@echo ""
 	@echo "${GREEN}✅ System ready!${RESET}"
 	@echo "   🖥️  Frontend Web:  http://localhost:3000"
-
+	@echo "   ⚙️  Backend Docs:  http://localhost:8000/docs"
 
 stop:  ## 🛑 Stop the application
 	@echo "${YELLOW}🛑 Stopping containers...${RESET}"

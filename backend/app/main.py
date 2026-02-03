@@ -19,7 +19,30 @@ from app.services.llm_service import run_with_retry_chat, ChatMessage
 from app.core.logging import logger
 
 
-app = FastAPI(title="Groq Hosted Model API")
+tags_metadata = [
+    {
+        "name": "Diagnosis",
+        "description": "Core endpoints for AI medical analysis and RAG.",
+    },
+    {
+        "name": "Health",
+        "description": "System status checks.",
+    },
+]
+
+app = FastAPI(
+    title="SmartSelect Health Backend",
+    description="""
+    SmartSelect Health API allows for preliminary medical diagnosis. 🏥
+
+    Key Features
+        * RAG: Retrieves context from the MedlinePlus knowledge base.
+        * Vision: Analyzes patient-uploaded images for visual symptoms.
+        * Hybrid Engine: Switches between Groq (Cloud) and Local LLMs.
+    """,
+    openapi_tags=tags_metadata,
+)
+
 
 origins = [
     "http://localhost:3000",
@@ -42,20 +65,66 @@ MAX_HISTORY_LENGTH = 10000
 MAX_K_RETRIEVAL = 10
 
 
-@app.get("/")
+@app.get("/", tags=["Health"])
 def root():
-    return {"message": "Hello!"}
+    return {
+        "message": "SmartSelect Health API is running!",
+        "status": "online",
+        "docs_url": "/docs"
+    }
 
-
-@app.post("/ask")
+@app.post(
+    "/ask",
+    summary="Submit patient symptoms",
+    tags=["Diagnosis"],
+    response_description="Returns a chat response or a final medical report.",
+)
 async def ask(
-    message: Annotated[str, Form(min_length=1, max_length=MAX_MESSAGE_LENGTH)],
-    history: Annotated[str, Form(max_length=MAX_HISTORY_LENGTH)] = "[]",
-    images: Optional[List[UploadFile]] = File(None),
-    k: Annotated[int, Form(ge=1, le=MAX_K_RETRIEVAL)] = 5,
-    mode: str = Form("api"),
-    use_functions: bool = Form(True),
+    message: Annotated[
+        str,
+        Form(
+            min_length=1,
+            max_length=MAX_MESSAGE_LENGTH,
+            description="The user's current symptom description.",
+        ),
+    ],
+    history: Annotated[
+        str,
+        Form(
+            max_length=MAX_HISTORY_LENGTH,
+            description="Previous chat history as a JSON string (list of messages).",
+        ),
+    ] = "[]",
+    images: Optional[List[UploadFile]] = File(
+        None,
+        description="Optional list of image files (e.g., photos of visible symptoms) for visual analysis.",
+    ),
+    k: Annotated[
+        int,
+        Form(
+            ge=1,
+            le=MAX_K_RETRIEVAL,
+            description="Number of medical documents to retrieve from the RAG Knowledge Base.",
+        ),
+    ] = 5,
+    mode: str = Form(
+        "api",
+        description="Inference mode: 'api' (Groq Cloud - High Perf) or 'local' (Offline - Fallback).",
+    ),
+    use_functions: bool = Form(
+        True,
+        description="Enable/Disable tool use (Function Calling). If False, model will just chat.",
+    ),
 ):
+    """
+    **Main interaction endpoint.**
+
+    This endpoint processes text and images to generate a medical response.
+
+    - **Logic**: It first checks the RAG index, then uses the LLM to decide whether to ask a follow-up question or provide a final report.
+    - **Security**: Inputs are scanned for injection attacks.
+    """
+
     logger.info("Endpoint ask called")
     try:
         processed_images = await _process_uploaded_images(images)
