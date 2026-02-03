@@ -52,6 +52,7 @@ env/
 # Specific files
 backend/data/**/*
 !backend/data/knowledge_base
+!backend/data/.keep
 
 
 # Tests and Cache

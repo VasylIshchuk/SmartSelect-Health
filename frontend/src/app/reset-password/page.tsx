@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 import { Lock, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";

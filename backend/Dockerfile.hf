@@ -35,4 +35,4 @@ ENV PYTHONPATH=$HOME/backend
 RUN GROQ_API_KEY=build_placeholder EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2 python -m scripts.build_rag_index
 
 # Start the application on port 7860 (Required by Hugging Face)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]

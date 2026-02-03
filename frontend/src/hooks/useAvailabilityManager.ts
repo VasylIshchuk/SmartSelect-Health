@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAvailability, AvailabilityUI, AvailabilityDB } from "@/hooks/useAvailability";
 import { useLocation, Location } from "@/hooks/useLocation";
-import { calculateNextSlotTimes, generateSlotsUntilLimit, getAvailableDatesOptions, getSlotWarning, parseTimeForDate } from "@/utils/availability";
+import { calculateNextSlotTimes, generateSlotsUntilLimit, getAvailableDatesOptions, getSlotWarning, parseTimeForDate } from "@/lib/availability";
+import { toast } from "sonner";
+import { logError, logWarning } from "@/lib/logger";
 
 
 export const useAvailabilityManager = (userId: string | undefined) => {
@@ -113,8 +115,9 @@ export const useAvailabilityManager = (userId: string | undefined) => {
 
             const refreshed = await getSlotsForDate(selectedDate);
             setSlots(refreshed);
-        } catch (error: any) {
-            alert(`Save failed: ${error.message}`);
+        } catch (error) {
+            logError(`[Schedule] Save failed for ${selectedDate}:`, error, "useAvailabilityManager::saveChanges");
+            toast.error("Save failed. Please try again");
         } finally {
             setIsSaving(false);
         }
@@ -128,7 +131,8 @@ export const useAvailabilityManager = (userId: string | undefined) => {
         try {
 
             if (slots.length === 0) {
-                alert("No available slots to copy.");
+                logWarning("[Schedule] Attempted to copy empty slots. Operation aborted.", "useAvailabilityManager::copyScheduleToDates");
+                toast.warning("No hours to copy. Please fill in the source day first.");
                 return;
             }
 
@@ -141,9 +145,9 @@ export const useAvailabilityManager = (userId: string | undefined) => {
             await Promise.all(promises);
 
             return true;
-        } catch (error: any) {
-            console.error(error);
-            alert(`Copy failed: ${error.message}`);
+        } catch (error) {
+            logError("[Schedule] Copy failed:", error, "useAvailabilityManager::copyScheduleToDates");
+            toast.error("An error occurred while saving the changes. Please try again.");
             return false;
         } finally {
             setIsSaving(false);

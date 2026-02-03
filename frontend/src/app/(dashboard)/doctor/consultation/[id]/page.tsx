@@ -16,6 +16,7 @@ import { useSession } from "@/components/hoc/AuthSessionProvider";
 import { useDoctor } from "@/hooks/useDoctor";
 import { ReportDetailsCard } from "@/components/shared/ReportDetailsCard";
 import { useReport } from "@/hooks/useReport";
+import { logError } from "@/lib/logger";
 
 
 type AiRatingType = "accurate" | "inaccurate" | null;
@@ -61,6 +62,7 @@ export default function AppointmentPage() {
         setIsSubmitting(false);
       }
     } catch (error) {
+      logError("Unexpected error in handleSave", error, "AppointmentPage::handleSave");
       setErrorMessage("An unexpected error occurred.");
       setIsSubmitting(false);
     }
@@ -74,7 +76,7 @@ export default function AppointmentPage() {
         const hasReport = await getIsReport(appointmentId);
         if (isMounted) setHasAiReport(hasReport);
       } catch (error) {
-        console.error("Failed to check AI report status", error);
+        logError("Failed to check AI report status", error, "AppointmentPage::loadData");
       }
     };
 

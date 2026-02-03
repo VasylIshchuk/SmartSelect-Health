@@ -2,7 +2,7 @@
 
 import React, { createContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 
 type ExtendedSession =
   | (Session & {

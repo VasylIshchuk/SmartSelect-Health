@@ -6,6 +6,8 @@ import { useAppointment } from "../useAppointments";
 import { useReport } from "../useReport";
 import { useUser } from "../useUser";
 import { AiReportData } from "@/types/report";
+import { logError, logWarning } from "@/lib/logger";
+import { toast } from "sonner";
 
 export function useAppointmentData(formData: FormDataState, userId?: string) {
     const { getDoctors, getUniqueSpecializations } = useDoctor(userId);
@@ -21,27 +23,35 @@ export function useAppointmentData(formData: FormDataState, userId?: string) {
     const [isBooking, setIsBooking] = useState(false);
 
     const bookAppointment = async (
-        currentFormData: FormDataState, 
+        currentFormData: FormDataState,
         report: AiReportData | null
     ): Promise<boolean> => {
-        setIsBooking(true); 
+        setIsBooking(true);
 
         try {
             await updateProfileData(currentFormData.pesel, currentFormData.birthDate);
 
             let savedReportId = null;
-            if (report) savedReportId = await createAiReport(report);
-            
+            if (report) {
+                savedReportId = await createAiReport(report);
+                if (!savedReportId) {
+                    logWarning("[Booking] AI Report save failed, proceeding with appointment creation without report.",
+                        "useAppointmentData::bookAppointment");
+                }
+            }
+
             await createAppointment(currentFormData, savedReportId);
 
             if (currentFormData.selectedSlotId) await lockAvailabilitySlot(currentFormData.selectedSlotId);
-            
-            return true; 
+
+            return true;
 
         } catch (error) {
-            throw new Error(`Booking failed: ${error}`);
+            logError("Critical error during appointment booking", error, "bookAppointment");
+            toast.error("Could not complete the booking.")
+            return false;
         } finally {
-            setIsBooking(false); 
+            setIsBooking(false);
         }
     };
 

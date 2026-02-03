@@ -55,3 +55,6 @@ clean: ## 🧹 Full cleanup (containers, images, cache)
 	@echo "${YELLOW}🧹 Cleaning up the environment...${RESET}"
 	docker compose down -v --rmi local
 	@echo "${GREEN}✅ Cleaned up.${RESET}"
+
+logs: ## 👀 Podgląd logów (Ctrl+C aby wyjść)
+	docker compose logs -f

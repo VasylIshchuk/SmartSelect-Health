@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react"
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 import { endOfDay, format, parseISO, startOfDay } from "date-fns";
+import { toast } from "sonner";
+import { logError } from "@/lib/logger";
 
 
 export type AvailabilityDB = {
@@ -34,48 +36,69 @@ export const useAvailability = (userId: string | undefined) => {
             const data = await fetchSlotsForDate(date)
             return data
         } catch (error) {
-            throw new Error(`Get slots for dane error: ${error}`);
+            logError("Unexpected error fetching daily slots", error, "useAvailability::getSlotsForDate");
+            return [];
         } finally {
             setIsLoading(false)
         }
-    }, [userId]);
+    }, []);
 
 
     const deleteSlots = useCallback(async (date: string) => {
-        if (!userId) throw new Error("User ID is missing. Cannot delete slots.");
-        await deleteSlotsForDate(userId, date)
+        if (!userId) {
+            logError("Attempted to delete slots without User ID", undefined, "useAvailability::deleteSlots");
+            toast.error("Authentication error. Please log in again.");
+            return;
+        }
+        try {
+            await deleteSlotsForDate(userId, date)
+        } catch (error) {
+            logError("Error executing delete slots", error, "useAvailability::deleteSlots");
+        }
     }, [userId]);
 
 
     const insertSlots = useCallback(async (slotsToInsert: Omit<AvailabilityDB, "id" | "duration">[]) => {
         try {
-            await supabase.from('availability').insert(slotsToInsert);
+            const { error } = await supabase.from('availability').insert(slotsToInsert);
+            if (error) {
+                logError("Error inserting slots", error, "useAvailability::insertSlots");
+                toast.error("Could not save your schedule. Please try again.");
+            }
         } catch (error) {
-            throw new Error(`Insert slots Error: ${error}`);
+            logError("Unexpected error inserting slots", error, "useAvailability::insertSlots");
         }
-    }, [userId]);
+    }, []);
 
 
     const getSlotsByDoctorIdForDate = useCallback(async (doctorId: string, date: string, location_id: string): Promise<AvailabilityDB[]> => {
         try {
-            return await fetchRawAvailability(doctorId, date, location_id)
+            return await fetchRawAvailability(doctorId, date, location_id);
         } catch (error) {
+            logError("Error in getSlotsByDoctorIdForDate", error, "useAvailability::getSlotsByDoctorIdForDate");
             return [];
         }
-    }, [userId]);
+    }, []);
 
 
     const lockAvailabilitySlot = useCallback(async (selectedSlotId: string) => {
-        await markSlotAsBooked(selectedSlotId)
+        try {
+            await markSlotAsBooked(selectedSlotId)
+        } catch (error) {
+            logError("Error locking slot", error, "useAvailability::lockAvailabilitySlot");
+        }
     }, [])
 
 
     const getOccupiedDates = useCallback(async (startDate: string, endDate: string): Promise<Set<string>> => {
         if (!userId) return new Set();
         setIsLoading(true);
-        
+
         try {
             return await getDatesWithSlotFromDateRange(userId, startDate, endDate);
+        } catch (error) {
+            logError("Error fetching occupied dates", error, "useAvailability::getOccupiedDates");
+            return new Set();
         } finally {
             setIsLoading(false);
         }
@@ -95,12 +118,18 @@ export const useAvailability = (userId: string | undefined) => {
 
 
 const fetchSlotsForDate = async (date: string) => {
-    const { data: slotsData } = await supabase
+    const { data: slotsData, error } = await supabase
         .from('availability')
         .select('*')
         .gte('start_time', `${date}T00:00:00`)
         .lte('start_time', `${date}T23:59:59`)
         .order('start_time', { ascending: true });
+
+    if (error) {
+        logError("Supabase error fetching slots", error, "fetchSlotsForDate");
+        toast.error("Could not load slots for this date.");
+        return [];
+    }
 
     if (slotsData) {
         const formattedSlots = slotsData.map(slot => ({
@@ -131,7 +160,10 @@ const deleteSlotsForDate = async (userId: string, date: string) => {
         .lte('start_time', dayEndISO)
         .eq('is_booked', false);
 
-    if (error) throw new Error(`Delete slots Error: ${error.message}`);
+    if (error) {
+        logError("Supabase error deleting slots", error, "useAvailability::deleteSlotsForDate");
+        toast.error("Could not clear previous schedule.");
+    }
 }
 
 const fetchRawAvailability = async (doctorId: string, date: string, location_id: string): Promise<AvailabilityDB[]> => {
@@ -152,7 +184,11 @@ const fetchRawAvailability = async (doctorId: string, date: string, location_id:
         .lte('start_time', endOfDay)
         .order('start_time', { ascending: true });
 
-    if (error) throw new Error(`Error fetching slots: ${error.message}`);
+    if (error) {
+        logError("Error fetching doctor availability", error, "useAvailability::fetchRawAvailability");
+        toast.error("Could not load doctor's schedule.");
+        return [];
+    }
 
     return data as AvailabilityDB[];
 };
@@ -163,7 +199,10 @@ const markSlotAsBooked = async (selectedSlotId: string) => {
         .update({ is_booked: true })
         .eq('id', selectedSlotId)
 
-    if (error) throw new Error(`Error locking the selected appointment slot: ${error.message}`);
+    if (error) {
+        logError("Error locking appointment slot", error, "useAvailability::markSlotAsBooked");
+        toast.error("Could not reserve this time slot. It may already be taken.");
+    }
 };
 
 
@@ -176,7 +215,10 @@ const getDatesWithSlotFromDateRange = async (userId: string, startDate: string, 
         .gte('start_time', `${startDate}T00:00:00`)
         .lte('start_time', `${endDate}T23:59:59`);
 
-    if (error) throw new Error(`Error checking availability ${error.message}`);
+    if (error) {
+        logError("Error checking availability", error, "useAvailability::getDatesWithSlotFromDateRange");
+        toast.error("Could not load availability.");
+    }
 
     if (data) {
         return new Set(

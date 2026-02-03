@@ -65,7 +65,7 @@ export default function ManageAvailabilityPage() {
                                 </div>
                                 <div className="text-center">
                                     <p className="text-lg font-medium text-slate-900">No slots defined</p>
-                                    <p className="text-sm">Click "Add Slot" to start planning for {manager.selectedDate}.</p>
+                                    <p className="text-sm">Click &quot;Add Slot&quot; to start planning for {manager.selectedDate}.</p>
                                 </div>
                             </div>
                         ) : (

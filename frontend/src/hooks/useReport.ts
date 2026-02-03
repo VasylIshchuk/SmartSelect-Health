@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 import { AiReportData, ReportHistoryItem, SummaryReportDetails } from "@/types/report";
+import { logError } from "@/lib/logger";
+import { toast } from "sonner";
 
 
 export const useReport = (userId: string | undefined) => {
@@ -12,12 +14,12 @@ export const useReport = (userId: string | undefined) => {
             const data = await fetchConsultationDetails(appointmentId);
             return data;
         } catch (error) {
-            console.error("Error fetching report:", error);
+            logError("Unexpected error in getConsultationDetails", error, "useReport::getConsultationDetails");
             return null;
         } finally {
             setIsLoading(false);
         }
-    }, [userId]);
+    }, []);
 
     const getReportsHistory = useCallback(async (): Promise<ReportHistoryItem[]> => {
         if (!userId) return [];
@@ -28,6 +30,7 @@ export const useReport = (userId: string | undefined) => {
             const reports = await fetchPatientReports(userId);
             return reports;
         } catch (error) {
+            logError("Unexpected error in getReportsHistory", error, "useReport::getReportsHistory");
             return [];
         } finally {
             setIsLoading(false);
@@ -38,13 +41,23 @@ export const useReport = (userId: string | undefined) => {
         try {
             return await checkReportExists(appointmentId);
         } catch (error) {
+            logError("Unexpected error in getIsReport", error, "useReport::getIsReport");
             return false;
         }
     }, []);
 
-    const createAiReport = useCallback(async (report: AiReportData): Promise<string> => {
-        if (!userId) throw new Error("User ID is missing. Cannot delete slots."); 
-        return await insertReport(userId, report);
+    const createAiReport = useCallback(async (report: AiReportData): Promise<string | null> => {
+        if (!userId) {
+            logError("Attempted to create report without User ID", undefined, "useReport::createAiReport");
+            toast.error("Authentication error. Please log in again.");
+            return null;
+        }
+        try {
+            return await insertReport(userId, report);
+        } catch (error) {
+            logError("Unexpected error in createAiReport", error, "useReport::createAiReport");
+            return null;
+        }
     }, [userId]);
 
     return { getConsultationDetails, getReportsHistory, getIsReport, createAiReport, isLoading };
@@ -88,10 +101,22 @@ export const fetchConsultationDetails = async (
         .eq("id", appointmentId)
         .single();
 
-    if (error) throw new Error(`Error fetching raport details: ${error.message}`);
-    if (!data) return null;
+    if (error) {
+        logError("Supabase error fetching consultation details", error, "fetchConsultationDetails");
+        toast.error("Could not load consultation details.");
+        return null;
+    }
 
-    return formatReport(data)
+    if (!data) {
+        return null;
+    }
+
+    try {
+        return formatReport(data);
+    } catch (formatError) {
+        logError("Data formatting error", formatError, "fetchConsultationDetails/formatReport");
+        return null;
+    }
 };
 
 const formatReport = (data: any): SummaryReportDetails => {
@@ -173,7 +198,11 @@ export const fetchPatientReports = async (userId: string) => {
         .eq('patient_id', userId)
         .order('created_at', { ascending: false });
 
-    if (error) throw new Error(`Error fetching raports: ${error.message}`);
+    if (error) {
+        logError("Supabase error fetching patient reports", error, "useReport::fetchPatientReports");
+        toast.error("Could not load report history.");
+        return [];
+    }
 
     if (!reports) return [];
 
@@ -215,7 +244,10 @@ const checkReportExists = async (appointmentId: string): Promise<boolean> => {
         .eq('id', appointmentId)
         .maybeSingle();
 
-    if (error) throw new Error(`Report checking error: ${error.message}`);
+    if (error) {
+        logError("Supabase error checking report existence", error, "useReport::checkReportExists");
+        return false;
+    }
 
     if (!data) return false
 
@@ -223,7 +255,7 @@ const checkReportExists = async (appointmentId: string): Promise<boolean> => {
 };
 
 
-const insertReport = async (userId: string, report: AiReportData): Promise<string> => {
+const insertReport = async (userId: string, report: AiReportData): Promise<string | null> => {
     const { reported_symptoms, ...reportDataForDb } = report;
     const { data, error } = await supabase
         .from('reports')
@@ -235,6 +267,11 @@ const insertReport = async (userId: string, report: AiReportData): Promise<strin
         .select('id')
         .single();
 
-    if (error) throw new Error(`Failed to save the report: ${error.message}`);
+    if (error) {
+        logError("Supabase error inserting new report", error, "useReport::insertReport");
+        toast.error("Could not save the report. Please try again.");
+        return null;
+    }
+
     return data.id;
 };

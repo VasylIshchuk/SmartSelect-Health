@@ -1,5 +1,7 @@
 import { useCallback } from "react";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
+import { logError, logWarning } from "@/lib/logger";
+import { toast } from "sonner";
 
 
 export type DashboardStats = {
@@ -31,17 +33,19 @@ export const useDoctor = (userId: string | undefined) => {
         try {
             return await fetchDoctors(locationId, specialization)
         } catch (error) {
+            logError("Unexpected error in getDoctors hook", error, "useDoctor::getDoctors");
             return [];
         }
-    }, [userId]);
+    }, []);
 
     const getUniqueSpecializations = useCallback(async (): Promise<string[]> => {
         try {
             return await fetchSpecializations()
         } catch (error) {
+            logError("Unexpected error in getUniqueSpecializations", error, "useDoctor::getUniqueSpecializations");
             return [];
         }
-    }, [userId]);
+    }, []);
 
     const getStats = useCallback(async (): Promise<DashboardStats | null> => {
         if (!userId) return null;
@@ -60,6 +64,8 @@ export const useDoctor = (userId: string | undefined) => {
                 aiReports: aiAppointments,
             };
         } catch (error) {
+            logError("Error loading dashboard stats", error, "useDoctor::getStats");
+            toast.error("Could not load dashboard statistics.");
             return null;
         }
     }, [userId]);
@@ -69,6 +75,7 @@ export const useDoctor = (userId: string | undefined) => {
             await saveDoctorDiagnosis(data);
             return true;
         } catch (error) {
+            logError("Unexpected error completing appointment", error, "useDoctor::completeAppointment");
             return false;
         }
     }, []);
@@ -108,22 +115,29 @@ export const fetchDoctors = async (locationId: string, specialization?: string):
 
     const { data, error } = await queryBuilder;
 
-    if (error) throw new Error(`Error fetching doctors: ${error.message}`);
 
+    if (error) {
+        logError("Supabase error fetching doctors", error, "useDoctors::fetchDoctors");
+        return [];
+    }
 
     const uniqueDoctorsMap = new Map();
 
-    data.forEach((doctor: any) => {
-        if (!uniqueDoctorsMap.has(doctor.id)) {
-            uniqueDoctorsMap.set(doctor.id, {
-                id: doctor.id,
-                specialization: doctor.specialization,
-                profiles: Array.isArray(doctor.profiles) ? doctor.profiles[0] : doctor.profiles
-            });
-        }
-    });
-
-    return Array.from(uniqueDoctorsMap.values());
+    try {
+        data.forEach((doctor: any) => {
+            if (!uniqueDoctorsMap.has(doctor.id)) {
+                uniqueDoctorsMap.set(doctor.id, {
+                    id: doctor.id,
+                    specialization: doctor.specialization,
+                    profiles: Array.isArray(doctor.profiles) ? doctor.profiles[0] : doctor.profiles
+                });
+            }
+        });
+        return Array.from(uniqueDoctorsMap.values());
+    } catch (parseError) {
+        logError("Error parsing doctors data", parseError, "useDoctors::fetchDoctors");
+        return [];
+    }
 };
 
 
@@ -133,7 +147,8 @@ const fetchSpecializations = async (): Promise<string[]> => {
         .select('specialization');
 
     if (error) {
-        throw new Error(`Error fetching specializations: ${error.message}`);
+        logError("Supabase error fetching specializations", error, "useDoctors::fetchSpecializations");
+        return [];
     }
 
     const allSpecializations = data.map((d: any) => d.specialization).filter(Boolean);
@@ -154,7 +169,10 @@ const fetchTodayAppointmentsCount = async (doctorId: string) => {
         .gte("availability.start_time", todayStartIso)
         .lte("availability.start_time", todayEndIso);
 
-    if (error) throw new Error(`Error today appointments: ${error.message}`);
+    if (error) {
+        logError("Error counting today appointments", error, "useDoctors::fetchTodayAppointmentsCount");
+        return 0;
+    }
 
     return count ?? 0;
 };
@@ -179,7 +197,10 @@ const fetchCountPatients = async (doctorId: string) => {
         doc_id: doctorId,
     });
 
-    if (error) throw new Error(`Error AI appointments: ${error.message}`);
+    if (error) {
+        logError("Error counting unique patients ", error, "useDoctors::fetchCountPatients");
+        return 0;
+    }
 
     return (data as number) ?? 0;
 };
@@ -191,7 +212,10 @@ const fetchAppointmentsWithAI = async (doctorId: string) => {
         .eq("doctor_id", doctorId)
         .not("reports.ai_primary_diagnosis", "is", null);
 
-    if (error) throw new Error(`Error counting patients: ${error.message}`);
+    if (error) {
+        logError("Error counting AI appointments", error, "useDoctors::fetchAppointmentsWithAI");
+        return 0;
+    }
 
     return count ?? 0;
 };
@@ -207,7 +231,10 @@ const saveDoctorDiagnosis = async ({ appointmentId, diagnosis, aiRating }: Appoi
         })
         .eq("id", appointmentId);
 
-    if (appointmentError) throw appointmentError;
+    if (appointmentError) {
+        logError("Error updating appointment status", appointmentError, "useDoctors::saveDoctorDiagnosis/updateAppointment");
+        return false;
+    }
 
 
     const { data: appointment, error: fetchError } = await supabase
@@ -217,7 +244,7 @@ const saveDoctorDiagnosis = async ({ appointmentId, diagnosis, aiRating }: Appoi
         .single();
 
 
-    if (fetchError) throw new Error(`No report associated with the visit was found: ${fetchError.message}`);
+    if (fetchError) logError("Could not fetch report_id for appointment", fetchError, "useDoctors::saveDoctorDiagnosis/fetchReportId");
 
     if (appointment?.report_id) {
         const { error: reportError } = await supabase
@@ -228,7 +255,11 @@ const saveDoctorDiagnosis = async ({ appointmentId, diagnosis, aiRating }: Appoi
             })
             .eq("id", appointment.report_id);
 
-        if (reportError) throw reportError;
+       if (reportError) {
+            logWarning("Error updating AI report feedback (AI rating could not be saved)", "useDoctors::saveDoctorDiagnosis/updateReport");
+            toast.warning("Visit finished, but AI rating could not be saved.");
+            return true; 
+        }
     }
 
 };

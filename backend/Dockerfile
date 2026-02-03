@@ -44,4 +44,4 @@ RUN mkdir -p /backend/data/knowledge_base
 # Build the index during image creation
 RUN GROQ_API_KEY=build_placeholder python -m scripts.build_rag_index
 # Running
-CMD uvicorn main:app --host 0.0.0.0 --port 8000
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000

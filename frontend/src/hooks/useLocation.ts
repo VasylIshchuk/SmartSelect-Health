@@ -1,5 +1,7 @@
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
+import { logError } from "@/lib/logger";
 import { useCallback } from "react";
+import { toast } from "sonner";
 
 
 export type Location = {
@@ -12,15 +14,31 @@ export type Location = {
 
 export const useLocation = (userId: string | undefined) => {
 
-    const insertLocation = useCallback(async (newLocation: Omit<Location, 'id'>): Promise<Location> => {
-        if (!userId) throw new Error("User ID is missing. Cannot create location.");
+    const insertLocation = useCallback(async (newLocation: Omit<Location, 'id'>): Promise<Location | null> => {
+        if (!userId) {
+            logError("Attempted to create location without User ID", undefined, "useLocation::insertLocation");
+            toast.error("Authentication error. Please log in again.");
+            return null;
+        }
 
-        const { data, error } = await supabase.from('locations').insert({
-            ...newLocation
-        }).select().single();
+        try {
+            const { data, error } = await supabase.from('locations').insert({
+                ...newLocation
+            }).select().single();
 
-        if (error) throw new Error(`Insert new location Error: ${error}`);
-        return data as Location
+            if (error) {
+                logError("Supabase error inserting location", error, "useLocation::insertLocation");
+                toast.error("Could not add new location. Please try again.");
+                return null;
+            }
+
+            toast.success("Location added successfully.");
+            return data as Location;
+
+        } catch (error) {
+            logError("Unexpected error in insertLocation", error, "useLocation::insertLocation");
+            return null;
+        }
     }, [userId]);
 
     const getLocationsByQueryOrSpecialization = useCallback(async (
@@ -28,11 +46,12 @@ export const useLocation = (userId: string | undefined) => {
         userQueryInput?: string
     ): Promise<Location[]> => {
         try {
-            return await fetchLocations(specialization, userQueryInput)
+            return await fetchLocations(specialization, userQueryInput);
         } catch (error) {
+            logError("Critical error in location search", error, "useLocation::getLocationsByQueryOrSpecialization");
             return [];
         }
-    }, [userId]);
+    }, []);
 
     return { insertLocation, getLocationsByQueryOrSpecialization }
 }
@@ -60,16 +79,27 @@ const fetchLocations = async (
 
     const { data, error } = await queryBuilder;
 
-    if (error) throw new Error(`Error fetching locations: ${error.message}`);
+    if (error) {
+        logError("Supabase error fetching locations", error, "useLocation::fetchLocations");
+        toast.error("Could not load locations.");
+        return [];
+    }
+
+    if (!data) return [];
 
     const uniqueLocationsMap = new Map();
 
-    data.forEach((item: any) => {
-        if (!uniqueLocationsMap.has(item.id)) {
-            const { availability, ...locationData } = item;
-            uniqueLocationsMap.set(item.id, locationData);
-        }
-    });
+   try {
+        data.forEach((item: any) => {
+            if (!uniqueLocationsMap.has(item.id)) {
+                const { availability, ...locationData } = item;
+                uniqueLocationsMap.set(item.id, locationData);
+            }
+        });
 
-    return Array.from(uniqueLocationsMap.values()) as Location[];
+        return Array.from(uniqueLocationsMap.values()) as Location[];
+    } catch (parseError) {
+        logError("Error parsing location data", parseError, "useLocation::fetchLocations");
+        return [];
+    }
 }

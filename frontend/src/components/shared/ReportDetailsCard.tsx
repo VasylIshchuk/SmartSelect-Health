@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useReport } from "@/hooks/useReport";
 import { AiReportData, SummaryReportDetails } from "@/types/report";
 import { Spinner } from "./Spinner";
+import { logError } from "@/lib/logger";
 
 
 export const ReportDetailsCard = ({ appointmentId }: { appointmentId: string }) => {
@@ -29,7 +30,7 @@ export const ReportDetailsCard = ({ appointmentId }: { appointmentId: string }) 
                     setReportDetails(data);
                 }
             } catch (error) {
-                console.error("Failed to load report:", error);
+                logError("[Critical] Error loading consultation details", error, "ReportDetailsCard::useEffect/getConsultationDetails");
             } finally {
                 if (isMounted) setIsPageLoading(false);
             }

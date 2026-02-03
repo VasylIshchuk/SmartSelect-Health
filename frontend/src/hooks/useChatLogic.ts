@@ -1,6 +1,7 @@
 import { API_URL } from "@/types/api";
 import { ApiResponse, ChatMessage } from "@/types/chat";
 import { AiReportData } from "@/types/report";
+import { logError } from "@/lib/logger";
 import { useCallback, useEffect, useState } from "react";
 
 
@@ -37,8 +38,8 @@ export function useChatLogic() {
       setChatMessages(parsed.messages || []);
       setAiReport(parsed.report || null);
       setIsInterviewComplete(parsed.isComplete || false);
-    } catch (e) {
-      console.error("Błąd odczytu historii", e);
+    } catch (error) {
+      logError("Error parsing chat session history", error, "useChatLogic::loadSession");
     }
   }, []);
 
@@ -105,7 +106,7 @@ export function useChatLogic() {
   };
 
   const handleAiError = (error: unknown) => {
-    console.error("Failed to send message:", error);
+    logError("Chat interaction interrupted", error, "useChatLogic::sendMessage");
     const errorMsg = createMessage("assistant", "I apologize, but the message failed to send. Please try again.");
     setChatMessages((prev) => [...prev, errorMsg]);
   };
@@ -168,6 +169,7 @@ async function fetchChatResponse(message: string, history: ChatMessage[], files:
   const response = await fetch(API_URL, { method: "POST", body: formData });
 
   if (!response.ok) {
+    logError(`API Error: ${response.statusText}`, undefined, "useChetLogic::fetchChatResponse");
     throw new Error(`API Error: ${response.statusText}`);
   }
 
