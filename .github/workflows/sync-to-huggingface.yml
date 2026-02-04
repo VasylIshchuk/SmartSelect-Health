@@ -45,4 +45,4 @@ jobs:
           echo "Pushing to Hugging Face..."
 
           # Sending to Hugging Face
-          git push --force https://VasylIshchuk:$HF_TOKEN@huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend main
+          git push --force https://VasylIshchuk:$HF_TOKEN@huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend HEAD:main

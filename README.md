@@ -40,12 +40,11 @@ cd /mnt/c/Users/YourName/Documents/SmartSelect-Health
 
 ```
 
-
 ### 2. 🗄 Database Setup
 
 To ensure the application functions correctly, you must apply the database schema to your Supabase project.
 
-1. **Locate the Schema File:** Find the `schema.sql` file in the root directory of `\frontent`.
+1. **Locate the Schema File:** Find the `schema.sql` file in the root directory of `frontent/`.
 2. **Open Supabase Dashboard:** Navigate to your project in Supabase.
 3. **Go to SQL Editor:** Click on the **SQL Editor** icon in the left sidebar.
 4. **Run Query:**
@@ -57,7 +56,6 @@ To ensure the application functions correctly, you must apply the database schem
 
 This process will create the necessary tables (`profiles`, `appointments`, `reports`, `doctors`, `availability`), enable Row Level Security (RLS) policies, and set up the required triggers for user registration.
 
----
 
 ### 3. Environment Configuration
 

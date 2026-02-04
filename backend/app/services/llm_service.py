@@ -159,7 +159,7 @@ def _get_rag_context(message: str, k: int) -> str:
         rag_service = get_rag_service()
         context_docs = rag_service.query(message, k=k * 2)
     except Exception as e:
-        logger.error(f"RAG Error (continuing without context): {e}")
+        logger.error(f"[EROOR] RAG Error (continuing without context): {e}")
         return ""
 
     rag_text_parts = []

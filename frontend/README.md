@@ -2,19 +2,6 @@
 
 This directory contains the **Frontend** application for the **SmartSelect Health** platform. It is a modern, responsive web application built with **Next.js 16 (App Router)** and **TypeScript**, designed to facilitate interaction between Patients, Doctors, and Administrators.
 
-## 📋 Table of Contents
-
-* [Tech Stack](#tech-stack)
-* [Features & Architecture](#features--architecture)
-* [Project Structure](#project-structure)
-* [Getting Started](#getting-started)
-* [Environment Variables](#environment-variables)
-* [Core Logic & Modules](#core-logic--modules)
-* [Docker & Deployment](#docker--deployment)
-* [Authors & Ownership](#authors--ownership)
-
----
-
 ## 🛠 Tech Stack
 
 **Core Framework**
@@ -146,8 +133,6 @@ DOCKER_API_URL_INTERNAL=http://backend:8000
 > **⚠️ Security Note:** Never commit `.env.local` to version control. The `SUPABASE_SERVICE_ROLE_KEY` has full administrative access to your database and should only be used in server-side API routes (found in `src/app/api`).
 
 ---
-
-### Local Installation
 
 
 1. **Clone the repository** and navigate to the frontend directory:
