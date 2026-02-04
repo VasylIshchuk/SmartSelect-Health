@@ -153,7 +153,7 @@ def _get_rag_context(message: str, k: int) -> str:
     if not message:
         return ""
 
-    logger.info("CALLED RAG QUERY")
+    logger.info("[INFO] CALLED RAG QUERY")
 
     try:
         rag_service = get_rag_service()

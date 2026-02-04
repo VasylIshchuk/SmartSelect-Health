@@ -35,6 +35,7 @@ jobs:
           git init
 
           git lfs install
+          git lfs track "*.bin" "*.pth" "*.pt" "*.onnx" "*.safetensors" "*.pkl" "*.index" "*.db"
           git add .gitattributes
 
           git add .

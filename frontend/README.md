@@ -96,32 +96,6 @@ frontend/
 * Yarn or npm
 * Docker (optional, for containerized run)
 
-### Local Installation
-
-1. **Clone the repository** and navigate to the frontend directory:
-```bash
-cd frontend
-
-```
-
-
-2. **Install dependencies**:
-```bash
-yarn install --frozen-lockfile
-
-```
-
-
-3. **Run the development server**:
-```bash
-yarn dev
-
-```
-
-
-The app will be available at `http://localhost:3000`.
-
----
 
 ## 🗄 Database Setup
 
@@ -172,6 +146,35 @@ DOCKER_API_URL_INTERNAL=http://backend:8000
 > **⚠️ Security Note:** Never commit `.env.local` to version control. The `SUPABASE_SERVICE_ROLE_KEY` has full administrative access to your database and should only be used in server-side API routes (found in `src/app/api`).
 
 ---
+
+### Local Installation
+
+
+1. **Clone the repository** and navigate to the frontend directory:
+```bash
+cd frontend
+
+```
+
+
+2. **Install dependencies**:
+```bash
+yarn install --frozen-lockfile
+
+```
+
+
+3. **Run the development server**:
+```bash
+yarn dev
+
+```
+
+
+The app will be available at `http://localhost:3000`.
+
+---
+
 
 ## 🧠 Core Logic & Modules
 

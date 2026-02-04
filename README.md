@@ -40,7 +40,26 @@ cd /mnt/c/Users/YourName/Documents/SmartSelect-Health
 
 ```
 
-### 2. Environment Configuration
+
+### 2. 🗄 Database Setup
+
+To ensure the application functions correctly, you must apply the database schema to your Supabase project.
+
+1. **Locate the Schema File:** Find the `schema.sql` file in the root directory of `\frontent`.
+2. **Open Supabase Dashboard:** Navigate to your project in Supabase.
+3. **Go to SQL Editor:** Click on the **SQL Editor** icon in the left sidebar.
+4. **Run Query:**
+* Create a generic "New Query".
+* Copy the entire content of `schema.sql`.
+* Paste it into the editor and click **Run**.
+
+
+
+This process will create the necessary tables (`profiles`, `appointments`, `reports`, `doctors`, `availability`), enable Row Level Security (RLS) policies, and set up the required triggers for user registration.
+
+---
+
+### 3. Environment Configuration
 
 The application requires specific API keys to function (Database connection and AI Provider).
 
@@ -51,26 +70,36 @@ make setup
 
 ```
 
-
 2. **Fill in the secrets:**
 Open the newly created `.env` file in the root directory and populate the variables:
 * **Backend / AI:**
-* `GROQ_API_KEY`: Required for the primary high-speed LLM. Get it from [Groq Console](https://console.groq.com/).
+
+To run the backend, you need a **Groq API Key**.
+
+1. Go to the **[Groq Cloud Console](https://console.groq.com/keys)**.
+2. Log in and click **"Create API Key"**.
+3. Copy the generated key string.
+
+* `GROQ_API_KEY`: Required for the primary high-speed LLM. Get it from [Groq Console](https://console.groq.com/keys).
 
 
 * **Frontend / Database:**
+
+You need to retrieve these keys from your Supabase Project Settings. How to find your keys:
+
+1. Go to your **Supabase Dashboard**.
+2. Click on **Settings** -> **API Keys**.
+3. **Project URL:** Copy the URL from the "Project URL" section.
+4. **Anon Key:** Copy the key labeled `anon` `public`.
+5. **Service Role Key:** Copy the key labeled `service_role` `secret`.
+
 * `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase Project URL.
 * `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Public API Key.
 * `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Secret Key (required for server-side operations).
 
 
 
-
-> *Tip: You can find Supabase keys in your Project Settings -> API.*
-
-
-
-### 3. Start the Application
+### 4. Start the Application
 
 We use a `Makefile` to simplify Docker commands. To build the images and start the services:
 
@@ -85,7 +114,7 @@ make start
 2. **Orchestration:** `docker-compose` spins up the containers in detached mode.
 3. **Networking:** Internal networking is established between the frontend and backend.
 
-### 4. Access the App
+### 5. Access the App
 
 Once the terminal says `✅ System ready!`, access the services at:
 
