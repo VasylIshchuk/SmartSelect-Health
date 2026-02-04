@@ -70,8 +70,9 @@ def root():
     return {
         "message": "SmartSelect Health API is running!",
         "status": "online",
-        "docs_url": "/docs"
+        "docs_url": "/docs",
     }
+
 
 @app.post(
     "/ask",

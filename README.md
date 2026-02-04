@@ -8,7 +8,7 @@
 
 You can explore the application immediately without setting up a local environment. The project is deployed using a hybrid cloud architecture:
 
-* **🖥️ Frontend Application:** **[Launch on Vercel](https://www.google.com/search?q=YOUR_VERCEL_LINK_HERE)**
+* **🖥️ Frontend Application:** **[Launch on Vercel](https://www.google.com/search?q=https://smartselect-health-frontend.vercel.app)**
 * **🧠 AI Backend API:** **[View on Hugging Face Spaces](https://www.google.com/search?q=https://huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend)**
 
 > **Note:** The live environment is fully functional. You can log in as a patient to test the AI diagnostic interview or as an administrator to manage the clinic.
