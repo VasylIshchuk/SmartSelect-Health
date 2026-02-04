@@ -19,7 +19,10 @@ import { useAdmin } from "@/hooks/useAdmin";
 import DashboardHeader from "@/components/shared/DashboardHeader";
 import { Doctor } from "@/types/admin";
 
+
 const ITEMS_PER_PAGE = 5;
+const PROTECTED_TEST_DOCTOR_ID = "4ae5154a-95dd-4a72-a88d-2675506a16a5";
+
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -307,6 +310,7 @@ function DoctorTableRow({
   onDelete: () => void;
   isLoading: boolean;
 }) {
+  const isProtected = doctor.id === PROTECTED_TEST_DOCTOR_ID;
   return (
     <tr className="transition-colors duration-150 hover:bg-slate-50/50">
       <td className="px-4 py-4 sm:px-6">
@@ -354,7 +358,7 @@ function DoctorTableRow({
       <td className="px-4 py-4 sm:px-6">
         <div className="flex items-center justify-end gap-2">
           <button
-            onClick={onEdit}
+            onClick={onEdit || isProtected}
             disabled={isLoading}
             className="rounded-lg p-2 text-slate-600 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Edit"
@@ -363,7 +367,7 @@ function DoctorTableRow({
           </button>
           <button
             onClick={onDelete}
-            disabled={isLoading}
+            disabled={isLoading || isProtected}
             className="rounded-lg p-2 text-red-600 transition-all duration-200 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Delete"
           >

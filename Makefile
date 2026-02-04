@@ -48,7 +48,8 @@ stop:  ## 🛑 Stop the application
 
 
 restart:  ## 🔄 Restart the entire environment
-	stop start 
+	$(MAKE) stop
+	$(MAKE) start
 
 
 clean: ## 🧹 Full cleanup (containers, images, cache)

@@ -16,7 +16,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SmartSelect Health",
-  description: "Login panel and visits mocked for the medical system.",
+  description: "Efficient doctor and patient visit management system for modern healthcare facilities",
+  icons: {
+    icon: "/icon.png", 
+  },
 };
 
 export default function RootLayout({

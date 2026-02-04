@@ -15,7 +15,6 @@ import { logError } from "@/lib/logger";
 import { DoctorInsertData } from "@/types/admin";
 
 
-
 export const useAdmin = () => {
   const [isLoading, setIsLoading] = useState(false);
 
