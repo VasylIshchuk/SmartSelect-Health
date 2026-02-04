@@ -1,0 +1,40 @@
+name: Sync Backend to Hugging Face
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**' 
+
+jobs:
+  deploy-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Git configuration for the bot
+          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Action"
+
+          cd backend
+
+          # Replace the Dockerfile.hf to Dockerfile
+          if [ -f "Dockerfile.hf" ]; then
+            mv Dockerfile.hf Dockerfile
+          fi
+
+          # Initialize a new temporary Git repository with only the backend contents.
+          git init
+          git add .
+          git commit -m "Deploy from GitHub Monorepo"
+
+          # Sending to Hugging Face
+          git push --force https://VasylIshchuk:$HF_TOKEN@huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend main

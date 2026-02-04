@@ -141,7 +141,7 @@ export const ModalCopySchedule = ({ userId, onClose }: ModalCopyScheduleProps) =
                     </div>
                     <div>
                         <h2 className="text-lg font-bold text-slate-900">Copy Schedule</h2>
-                        <p className="text-xs text-slate-500">Replicate today's plan to other days</p>
+                        <p className="text-xs text-slate-500">Replicate today&apos;s plan to other days</p>
                     </div>
                 </div>
 

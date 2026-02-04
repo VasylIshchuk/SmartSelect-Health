@@ -1,5 +1,7 @@
-import { supabase } from "@/api/supabase";
-import { use, useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { logError } from "@/lib/logger";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export interface UserProfile {
   id: string;
@@ -56,5 +58,8 @@ const updatePatientProfile = async (userId: string, pesel: string, birthDate: st
     .update(updates)
     .eq('id', userId);
 
-  if (error) throw new Error(`Failed to update patient data: ${error.message}`);
+  if (error) {
+    logError("Error updating patient profile", error, "useUser::updatePatientProfile");
+    return false;
+  }
 };

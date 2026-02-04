@@ -1,0 +1,64 @@
+# ========================
+# GIT & CONFIGS
+# ========================
+.git
+.gitignore
+.dockerignore
+.github
+.vscode
+.idea
+README.md
+docs/
+Makefile
+docker-compose.yml
+docker-compose.override.yml
+
+# ========================
+# SECRETS
+# ========================
+.env
+.env.*
+*.pem
+
+
+# ========================
+# SYSTEM & LOGS
+# ========================
+.DS_Store
+Thumbs.db
+*.log
+backend/api.log
+backend/db.sqlite3
+
+
+# ========================
+# KEY - DEPENDENCIES 
+# ========================
+**/node_modules
+**/npm-debug.log
+**/yarn-debug.log
+**/yarn-error.log
+**/venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.coverage
+**/htmlcov
+
+
+# ========================
+# DEPENDENCIES & BUILD ARTIFACTS
+# ========================
+
+# Frontend 
+.next
+out
+build
+dist
+.vercel
+
+
+# Dokumentacja i Testy
+docs/
+tests/

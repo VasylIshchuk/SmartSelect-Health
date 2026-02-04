@@ -2,6 +2,7 @@ import { FormDataState } from "@/types/book_appointment";
 import { AiReportData } from "@/types/report";
 import { useEffect, useMemo, useState } from "react";
 import { UserProfile } from "../useUser";
+import { logError } from "@/lib/logger";
 
 export function useAppointmentForm(user: UserProfile | null) {
     const [formData, setFormData] = useState<FormDataState>({
@@ -26,7 +27,7 @@ export function useAppointmentForm(user: UserProfile | null) {
             formData.reportedSymptoms.trim() !== '' &&
             formData.doctorId !== '' &&
             formData.selectedDate !== '' &&
-            formData.selectedSlotId !== null && 
+            formData.selectedSlotId !== null &&
             formData.selectedSlotId !== ''
         );
     }, [formData]);
@@ -42,7 +43,10 @@ export function useAppointmentForm(user: UserProfile | null) {
                     ...prev,
                     reportedSymptoms: parsed.reported_symptoms || prev.reportedSymptoms
                 }));
-            } catch (e) { console.error("Error parsing report", e); }
+            } catch (error) {
+               logError("Error parsing saved medical report from LocalStorage", error, "AppointmentForm::useEffect");
+               localStorage.removeItem('medicalReport');
+            }
         }
     }, []);
 

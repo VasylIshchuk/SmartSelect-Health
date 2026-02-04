@@ -10,13 +10,12 @@ MODEL_NAME = os.getenv("MODEL_NAME")
 
 def test_check_configuration():
     print("\n--- 1. CONFIGURATION CHECK ---")
-    assert API_KEY,"API Key: NOT FOUND! Check your .env file"
-    assert MODEL_NAME , "Model Name: NOT FOUND! Check your .env file"
-
+    assert API_KEY, "API Key: NOT FOUND! Check your .env file"
+    assert MODEL_NAME, "Model Name: NOT FOUND! Check your .env file"
 
 
 def test_run_connection_test():
-    print(f"\n--- 2. MODEL CONNECTION TEST:  ---")
+    print("\n--- 2. MODEL CONNECTION TEST:  ---")
 
     try:
         client = Groq(api_key=API_KEY)
@@ -27,7 +26,7 @@ def test_run_connection_test():
             messages=[
                 {
                     "role": "user",
-                    "content": "Write one sentence: 'Connection is working correctly'."
+                    "content": "Write one sentence: 'Connection is working correctly'.",
                 }
             ],
             model=MODEL_NAME,
@@ -37,8 +36,8 @@ def test_run_connection_test():
         assert response_text is not None and len(response_text) > 0, "Response ERROR!"
 
         print("\nSUCCESS! Response received.")
-        print(f"AI Response: \"{response_text}\"")
+        print(f'AI Response: "{response_text}"')
 
     except Exception as e:
-        print(f"\nCRITICAL ERROR:")
+        print("\nCRITICAL ERROR:")
         print(f"{str(e)}")

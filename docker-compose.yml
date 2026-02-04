@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------
+  # BACKEND (Python / FastAPI)
+  # ----------------------------------------
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai_backend
+    restart: unless-stopped
+    volumes:
+      - ./backend:/backend
+      - /backend/venv
+      - huggingface_data:/root/.cache/huggingface
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MODEL_NAME=${MODEL_NAME}
+      - HF_HOME=/root/.cache/huggingface
+    env_file:
+      - .env
+
+  # ----------------------------------------
+  # FRONTEND (Next.js + Supabase)
+  # ----------------------------------------
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai_frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+      - /frontend/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - API_URL_INTERNAL=${DOCKER_API_URL_INTERNAL}
+      
+      - WATCHPACK_POLLING=true
+    env_file:
+      - .env
+
+volumes:
+  huggingface_data:

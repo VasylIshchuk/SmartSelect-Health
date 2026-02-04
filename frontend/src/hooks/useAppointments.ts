@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
-import { supabase } from "@/api/supabase";
+import { supabase } from "@/lib/supabase";
 import { FormDataState } from "@/types/book_appointment";
+import { logError } from "@/lib/logger";
+import { toast } from "sonner";
 
 export type Appointment = {
     id: string;
@@ -41,6 +43,7 @@ export const useAppointment = (userId: string | undefined) => {
             const appointments = await fetchAppointments(userId, filter, userRole);
             return appointments;
         } catch (error) {
+            logError("Unexpected error in getAppointmentsDetails", error, "useAppointment::getAppointmentsDetails");
             return [];
         } finally {
             setIsLoading(false);
@@ -48,25 +51,43 @@ export const useAppointment = (userId: string | undefined) => {
     }, [userId]);
 
 
-    const confirmAppointment = useCallback(async (appointmetId: string) => {
+    const confirmAppointment = useCallback(async (appointmentId: string) => {
         try {
-            return await markAppointmentConfirmed(appointmetId)
-        } catch (error) {
-            return false
-        }
-    }, [userId]);
+            const success = await markAppointmentConfirmed(appointmentId);
 
-    const cancelAppointment = useCallback(async (appointmetId: string, availabilityId: string) => {
-        try {
-            return await markAppointmentCancelled(appointmetId, availabilityId)
+            if (success) {
+                toast.success("Appointment confirmed successfully.");
+            } else {
+                toast.error("Could not confirm appointment. Please try again.");
+            }
+
+            return success;
         } catch (error) {
+            logError("Unexpected error in confirmAppointment", error, "useAppointment::confirmAppointment");
             return false
         }
-    }, [userId]);
+    }, []);
+
+    const cancelAppointment = useCallback(async (appointmentId: string, availabilityId: string) => {
+        try {
+            const success = await markAppointmentCancelled(appointmentId, availabilityId);
+
+            if (success) {
+                toast.success("Appointment cancelled.");
+            } else {
+                toast.error("Could not cancel appointment. Please try again or contact support.");
+            }
+
+            return success;
+        } catch (error) {
+            logError("Unexpected error in cancelAppointment", error, "useAppointment::cancelAppointment");
+            return false
+        }
+    }, []);
 
 
     const createAppointment = useCallback(async (formData: FormDataState, savedReportId: string | null) => {
-        if (!userId) return 
+        if (!userId) return
         await insertAppointment(userId, formData, savedReportId);
     }, [userId]);
 
@@ -138,10 +159,20 @@ const fetchAppointments = async (
 
     const { data, error } = await query;
 
-    if (error) throw new Error(`Error fetching appointments: ${error.message}`);
+    if (error) {
+        logError("Supabase error fetching appointments", error, "fetchAppointments");
+        toast.error("Could not load appointments.");
+        return [];
+    }
+
     if (!data) return [];
 
-    return data.map((item) => formatAppointment(item, userRole));
+    try {
+        return data.map((item) => formatAppointment(item, userRole));
+    } catch (formatError) {
+        logError("Error formatting appointment data", formatError, "fetchAppointments/map");
+        return [];
+    }
 };
 
 
@@ -199,7 +230,10 @@ const markAppointmentConfirmed = async (appointmentId: string) => {
         .update({ status: 'Confirmed' })
         .eq('id', appointmentId);
 
-    if (error) return false;
+    if (error) {
+        logError("Error confirming appointment", error, "useAppointments::markAppointmentConfirmed");
+        return false;
+    }
 
     return true;
 }
@@ -211,7 +245,11 @@ const markAppointmentCancelled = async (appointmentId: string, availabilityId: s
         .update({ status: 'Cancelled' })
         .eq('id', appointmentId);
 
-    if (appointmentError) return false;
+
+    if (appointmentError) {
+        logError("Error cancelling appointment status", appointmentError, "useAppointments::markAppointmentCancelled/updateStatus");
+        return false;
+    }
 
 
     if (availabilityId) {
@@ -220,7 +258,10 @@ const markAppointmentCancelled = async (appointmentId: string, availabilityId: s
             .update({ is_booked: false })
             .eq('id', availabilityId);
 
-        if (availabilityError) throw new Error(`Failed to free up slot: ${availabilityError.message}`);
+        if (availabilityError) {
+            logError("CRITICAL: Failed to free up slot after cancellation", availabilityError, "useAppointments::markAppointmentCancelled/freeSlot");
+            return true;
+        }
     }
 
     return true;
@@ -241,7 +282,8 @@ const insertAppointment = async (userId: string, formData: FormDataState, report
             status: 'Pending',
         });
 
-    if (error) throw new Error(`Failed to save the appointment data: ${error.message}`);
+    if (error) logError("Supabase error inserting appointment", error, "useAppointments::insertAppointment");
+
 };
 
 

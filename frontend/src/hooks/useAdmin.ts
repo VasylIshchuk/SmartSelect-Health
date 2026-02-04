@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { supabaseAdmin, isAdminApiAvailable } from "@/api/supabaseAdmin";
-import { supabase } from "@/api/supabase";
+import { supabaseAdmin, isAdminApiAvailable } from "@/lib/supabaseAdmin";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export interface Doctor {
