@@ -1,4 +1,4 @@
-# SmartSelect Health - Frontend
+# 🧠 SmartSelect Health - Frontend
 
 This directory contains the **Frontend** application for the **SmartSelect Health** platform. It is a modern, responsive web application built with **Next.js 16 (App Router)** and **TypeScript**, designed to facilitate interaction between Patients, Doctors, and Administrators.
 

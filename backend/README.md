@@ -66,7 +66,7 @@ Create a `.env` file in the `backend/` root and paste your key:
 GROQ_API_KEY=gsk_your_generated_key_here...
 
 # Optional overrides (defaults are usually sufficient)
-MODEL_NAME=mixtral-8x7b-32768
+MODEL_NAME=meta-llama/llama-4-scout-17b-16e-instruct
 LOCAL_MODEL_NAME=EleutherAI/gpt-neo-125M
 
 ```
@@ -116,6 +116,16 @@ The project uses a sophisticated CI/CD flow to handle deployment limitations on 
 
 A standard `Dockerfile` is pre-configured to set up the complete Python environment, install system dependencies, and expose the necessary ports. You can build and run the container using standard Docker commands, ensuring your `.env` variables are passed through.
 
+Use the standard Dockerfile for local testing.
+
+```bash
+# Build the image
+docker build -t medical-backend .
+
+# Run the container
+docker run -p 8000:8000 --env-file .env medical-backend
+
+```
 
 ### Hugging Face Deployment (CI/CD)
 

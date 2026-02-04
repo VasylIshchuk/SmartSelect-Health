@@ -358,8 +358,8 @@ function DoctorTableRow({
       <td className="px-4 py-4 sm:px-6">
         <div className="flex items-center justify-end gap-2">
           <button
-            onClick={onEdit || isProtected}
-            disabled={isLoading}
+            onClick={onEdit}
+            disabled={isLoading || isProtected}
             className="rounded-lg p-2 text-slate-600 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Edit"
           >
