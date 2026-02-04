@@ -8,11 +8,13 @@ import {
   updateDoctorAction,
   getVisitsAction,
   getReportsAction,
-  DoctorInsertData
 } from "@/actions/admin";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { logError } from "@/lib/logger";
+import { DoctorInsertData } from "@/types/admin";
+
+
 
 export const useAdmin = () => {
   const [isLoading, setIsLoading] = useState(false);

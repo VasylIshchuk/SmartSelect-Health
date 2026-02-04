@@ -1,7 +1,7 @@
 "use client";
+
 import {
   Edit2,
-  LogOut,
   Search,
   Trash2,
   UserPlus,
@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Doctor, useAdmin } from "@/hooks/useAdmin";
+import { useAdmin } from "@/hooks/useAdmin";
 import DashboardHeader from "@/components/shared/DashboardHeader";
+import { Doctor } from "@/types/admin";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -442,11 +443,10 @@ function Pagination({
           <button
             key={pageNum}
             onClick={() => onPageChange(pageNum)}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200 ${
-              currentPage === pageNum
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200 ${currentPage === pageNum
                 ? "border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-500/25"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-            }`}
+              }`}
           >
             {pageNum}
           </button>

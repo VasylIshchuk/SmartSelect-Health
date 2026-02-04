@@ -2,15 +2,9 @@
 
 import { logError } from "@/lib/logger";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { DoctorInsertData } from "@/types/admin";
 
-export type DoctorInsertData = {
-    first_name: string;
-    last_name: string;
-    email: string;
-    specialization: string;
-    work_start_date: string;
-    password: string;
-}
+
 
 export async function createDoctorAction(data: DoctorInsertData) {
     try {
