@@ -8,8 +8,8 @@
 
 You can explore the application immediately without setting up a local environment. The project is deployed using a hybrid cloud architecture:
 
-* **🖥️ Frontend Application:** **[Launch on Vercel](https://www.google.com/search?q=https://smartselect-health-frontend.vercel.app)**
-* **🧠 AI Backend API:** **[View on Hugging Face Spaces](https://www.google.com/search?q=https://huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend)**
+* **🖥️ Frontend Application:** **[Launch on Vercel](https://smartselect-health-frontend.vercel.app)**
+* **🧠 AI Backend API:** **[View on Hugging Face Spaces](https://huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend)**
 
 > **Note:** The live environment is fully functional. You can log in as a patient to test the AI diagnostic interview or as an administrator to manage the clinic.
 
@@ -23,8 +23,8 @@ This is the recommended way to run the project for development. The entire stack
 
 Before you begin, ensure you have the following installed:
 
-* **[Docker Desktop](https://www.google.com/search?q=https://www.docker.com/products/docker-desktop)** (Ensure the Docker daemon is running)
-* **[Make](https://www.google.com/search?q=https://www.gnu.org/software/make/)** (Standard on Linux/macOS; for Windows use WSL2 or Git Bash)
+* **[Docker Desktop](https://www.docker.com/products/docker-desktop)** (Ensure the Docker daemon is running)
+* **[Make](https://www.gnu.org/software/make/)** (Standard on Linux/macOS; for Windows use WSL2 or Git Bash)
 
 
 #### 🐧 For Windows Users (WSL2)
@@ -55,7 +55,7 @@ make setup
 2. **Fill in the secrets:**
 Open the newly created `.env` file in the root directory and populate the variables:
 * **Backend / AI:**
-* `GROQ_API_KEY`: Required for the primary high-speed LLM. Get it from [Groq Console](https://www.google.com/search?q=https://console.groq.com/).
+* `GROQ_API_KEY`: Required for the primary high-speed LLM. Get it from [Groq Console](https://console.groq.com/).
 
 
 * **Frontend / Database:**
@@ -89,8 +89,8 @@ make start
 
 Once the terminal says `✅ System ready!`, access the services at:
 
-* **Frontend (Web App):** [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-* **Backend (API Docs):** [http://localhost:8000/docs](https://www.google.com/search?q=http://localhost:8000/docs)
+* **Frontend (Web App):** [http://localhost:3000](http://localhost:3000)
+* **Backend (API Docs):** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -131,8 +131,8 @@ This is a Monorepo containing both the AI Backend and the Web Frontend.
 
 *For detailed documentation on specific components, please refer to:*
 
-* **[Backend Documentation](https://www.google.com/search?q=./backend/README.md)** (Architecture, RAG, API Endpoints)
-* **[Frontend Documentation](https://www.google.com/search?q=./frontend/README.md)** (Role-based logic, Supabase setup, UI Stack)
+* **[Backend Documentation](https://github.com/VasylIshchuk/SmartSelect-Health/blob/main/backend/README.md)** (Architecture, RAG, API Endpoints)
+* **[Frontend Documentation](https://github.com/VasylIshchuk/SmartSelect-Health/blob/main/frontend/README.md)** (Role-based logic, Supabase setup, UI Stack)
 
 ---
 

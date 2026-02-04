@@ -31,10 +31,17 @@ jobs:
             mv Dockerfile.hf Dockerfile
           fi
 
-          # Initialize a new temporary Git repository with only the backend contents.
+          # Initialize a new temporary Git repository with only the backend contents
           git init
+
+          git lfs install
+          git add .gitattributes
+
           git add .
           git commit -m "Deploy from GitHub Monorepo"
+
+          # Status to logs
+          echo "Pushing to Hugging Face..."
 
           # Sending to Hugging Face
           git push --force https://VasylIshchuk:$HF_TOKEN@huggingface.co/spaces/VasylIshchuk/smartselect-health-ai-backend main

@@ -4,14 +4,14 @@ This directory contains the **Frontend** application for the **SmartSelect Healt
 
 ## 📋 Table of Contents
 
-* [Tech Stack](https://www.google.com/search?q=%23-tech-stack)
-* [Features & Architecture](https://www.google.com/search?q=%23-features--architecture)
-* [Project Structure](https://www.google.com/search?q=%23-project-structure)
-* [Getting Started](https://www.google.com/search?q=%23-getting-started)
-* [Environment Variables](https://www.google.com/search?q=%23-environment-variables)
-* [Core Logic & Modules](https://www.google.com/search?q=%23-core-logic--modules)
-* [Docker & Deployment](https://www.google.com/search?q=%23-docker--deployment)
-* [Authors & Ownership](https://www.google.com/search?q=%23-authors--ownership)
+* [Tech Stack](#tech-stack)
+* [Features & Architecture](#features--architecture)
+* [Project Structure](#project-structure)
+* [Getting Started](#getting-started)
+* [Environment Variables](#environment-variables)
+* [Core Logic & Modules](#core-logic--modules)
+* [Docker & Deployment](#docker--deployment)
+* [Authors & Ownership](#authors--ownership)
 
 ---
 
@@ -117,7 +117,6 @@ yarn install --frozen-lockfile
 yarn dev
 
 ```
-
 
 
 The app will be available at `http://localhost:3000`.
