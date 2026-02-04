@@ -5,7 +5,7 @@ export interface Doctor {
   email: string;
   specialization: string;
   work_start_date: string;
-  password: string;
+  password?: string;
 }
 
 export interface DoctorInsertData {
